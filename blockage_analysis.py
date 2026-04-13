@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
 from datetime import datetime
+import csv
 
 plt.rcParams.update({
     "font.size": 14,          # base font size
@@ -36,6 +37,15 @@ def destagger(var, stagger_dim):
     result = .5*(var[tuple(dim_ranges_1)] + var[tuple(dim_ranges_2)])
 
     return result
+
+def read_filenames_from_csv(csv_path):
+    files = []
+    with open(csv_path, newline='') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if row:  # skip empty lines
+                files.append(row[0])
+    return files
 
 def load_data(data_dir, files, domain, hours):
 
@@ -244,19 +254,15 @@ if __name__ == "__main__":
     parser.add_argument("--figure_dir", type=str, default="Figures/neutral")
 
     parser.add_argument(
-        "--files",
-        nargs="+",
-        default=[
-            "wrfout_d02_2000-01-01_11_00_00",
-            "wrfout_d02_2000-01-01_11_10_00",
-            "wrfout_d02_2000-01-01_11_20_00",
-            "wrfout_d02_2000-01-01_11_30_00",
-            "wrfout_d02_2000-01-01_11_40_00",
-            "wrfout_d02_2000-01-01_11_50_00",
-        ],
+        "--file_list",
+        type=str,
+        required=True,
+        help="Path to CSV file containing filenames (one per line)"
     )
 
     args = parser.parse_args()
+
+    FILES = read_filenames_from_csv(args.file_list)
 
     TURBINE_DIR = Path(args.turbine_dir)
     NO_TURBINE_DIR = Path(args.noturbine_dir)

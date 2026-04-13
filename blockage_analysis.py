@@ -5,6 +5,12 @@ from pathlib import Path
 import argparse
 from datetime import datetime
 import csv
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 plt.rcParams.update({
     "font.size": 14,          # base font size
@@ -51,7 +57,9 @@ def load_data(data_dir, files):
 
     data_dict = {}
     for file in files:
-        ds = xr.open_dataset(data_dir / file)
+        file_path = data_dir / file
+        logging.info(f"Loading WRF file: {file_path}")
+        ds = xr.open_dataset(file_path)
         U = ds.variables["U"][0, :, :, :]
         V = ds.variables["V"][0, :, :, :]
         PH = ds.variables["PH"][0, :, :, :]
@@ -108,7 +116,9 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
               color='black', linestyle='dashed', label='turbine position')
     ax.legend()
     plt.tight_layout()
-    plt.savefig(figure_dir / 'mean_vertical_slice.png', dpi=200)
+    output_path = figure_dir / 'mean_vertical_slice.png'
+    plt.savefig(output_path, dpi=200)
+    logging.info(f"Saved plot: {output_path}")
 
 def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx, turbine_x, turbine_y, turbine_hub_height, rotor_diameter):
     labels = ['turbine', 'no turbine']
@@ -148,7 +158,9 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Wind Speed (m/s)')
     plt.tight_layout()
-    plt.savefig(figure_dir / 'mean_axial_wind_speed.png', dpi=200)
+    output_path = figure_dir / 'mean_axial_wind_speed.png'
+    plt.savefig(output_path, dpi=200)
+    logging.info(f"Saved plot: {output_path}")
 
 def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, turbine_hub_height, rotor_diameter, turbine_x, turbine_y):
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
@@ -171,13 +183,16 @@ def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_
     ax.set_ylabel('Mean wind speed (m/s)')
     # ax.set_title(r'$\Delta x$ vs mean wind speed')
     plt.tight_layout()
-    plt.savefig(figure_dir / 'grid_cell_wind_speed_blockage.png', dpi=200)
+    output_path = figure_dir / 'grid_cell_wind_speed_blockage.png'
+    plt.savefig(output_path, dpi=200)
+    logging.info(f"Saved plot: {output_path}")
 
 def get_colors(n, cmap_name='viridis'):
     cmap = plt.get_cmap(cmap_name)
     return [cmap(i) for i in np.linspace(0, 1, n)]
 
 def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_cell_size, max_cell_size, lower_z, upper_z, turbine_x, turbine_y):
+    logging.info("started delta")
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     heights = np.arange(lower_z, upper_z)
     color_set = get_colors(len(heights), cmap_name='viridis')
@@ -209,7 +224,9 @@ def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_c
     ax.set_ylabel('Average upstream wind speed deficit (m/s)')
     # ax.set_title(r'Projected upstream wind speed deficit for different effective mesoscale grid sizes')
     plt.tight_layout()
-    plt.savefig(figure_dir / 'grid_cell_wind_speed_delta.png', dpi=200)
+    output_path = figure_dir / 'grid_cell_wind_speed_delta.png'
+    plt.savefig(output_path, dpi=200)
+    logging.info(f"Saved plot: {output_path}")
 
 def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):
     turbine_dict = load_data(TURBINE_DIR, FILES)

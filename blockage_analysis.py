@@ -47,7 +47,7 @@ def read_filenames_from_csv(csv_path):
                 files.append(row[0])
     return files
 
-def load_data(data_dir, files, domain, hours):
+def load_data(data_dir, files):
 
     data_dict = {}
     for file in files:
@@ -211,9 +211,9 @@ def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_c
     plt.tight_layout()
     plt.savefig(figure_dir / 'grid_cell_wind_speed_delta.png', dpi=200)
 
-def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, DOMAIN, HOURS, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):
-    turbine_dict = load_data(TURBINE_DIR, FILES, DOMAIN, HOURS)
-    no_turbine_dict = load_data(NO_TURBINE_DIR, FILES, DOMAIN, HOURS)
+def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):
+    turbine_dict = load_data(TURBINE_DIR, FILES)
+    no_turbine_dict = load_data(NO_TURBINE_DIR, FILES)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     FIGURE_DIR = FIGURE_DIR / timestamp
@@ -235,9 +235,6 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, DOMAIN, HOURS, HUB_HEIG
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process WRF wind turbine data")
-
-    parser.add_argument("--domain", type=str, default="d02")
-    parser.add_argument("--hours", type=int, default=11)
 
     parser.add_argument("--hub_height", type=float, default=90)
     parser.add_argument("--rotor_diameter", type=float, default=127)
@@ -271,10 +268,8 @@ if __name__ == "__main__":
     neutral_data = main(
         TURBINE_DIR,
         NO_TURBINE_DIR,
-        args.files,
+        FILES,
         FIGURE_DIR,
-        args.domain,
-        args.hours,
         args.hub_height,
         args.rotor_diameter,
         args.dx,

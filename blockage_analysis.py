@@ -192,13 +192,10 @@ def get_colors(n, cmap_name='viridis'):
     return [cmap(i) for i in np.linspace(0, 1, n)]
 
 def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_cell_size, max_cell_size, lower_z, upper_z, turbine_x, turbine_y):
-    logging.info("started delta")
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     heights = np.arange(lower_z[0], upper_z[0])
     color_set = get_colors(len(heights), cmap_name='viridis')
     fig, ax = plt.subplots(figsize=(10, 6))
-    logging.info(heights)
-    logging.info(widths)
     for i, height in enumerate(heights):
         mean_speeds = []
         for width in widths:

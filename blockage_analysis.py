@@ -152,8 +152,8 @@ def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     mean_speeds = []
     V2 = data_dict["V2"]
-    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)[0]
-    index = find_nearest_height(Z, turbine_hub_height)
+    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)
+    index = find_nearest_height(Z, turbine_hub_height)[0]
     for width in widths:
         grid_cell = V2.isel(bottom_top=index,
                             south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),

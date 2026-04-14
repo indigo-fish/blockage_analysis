@@ -158,7 +158,7 @@ def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_
         grid_cell = V2.isel(bottom_top=index,
                             south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
                             west_east=slice(turbine_x - int(width), turbine_x))
-        mean_wind_speed = grid_cell.mean(dim=("Time", "bottom_top", "south_north")).compute()
+        mean_wind_speed = grid_cell.mean(dim=("Time", "south_north")).compute()
         mean_speeds.append(mean_wind_speed)
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(widths, mean_speeds, marker='o')

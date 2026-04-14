@@ -22,27 +22,11 @@ plt.rcParams.update({
     "figure.titlesize": 18    # figure title
 })
 
-def destagger(var, stagger_dim):
-    '''
-    From wrf-python https://github.com/NCAR/wrf-python/blob/b40d1d6e2d4aea3dd2dda03aae18e268b1e9291e/src/wrf/destag.py
-    '''
-    var_shape = var.shape
-    num_dims = var.ndim
-    stagger_dim_size = var_shape[stagger_dim]
-
-    full_slice = slice(None)
-    slice1 = slice(0, stagger_dim_size - 1, 1)
-    slice2 = slice(1, stagger_dim_size, 1)
-
-    dim_ranges_1 = [full_slice] * num_dims
-    dim_ranges_2 = [full_slice] * num_dims
-
-    dim_ranges_1[stagger_dim] = slice1
-    dim_ranges_2[stagger_dim] = slice2
-
-    result = .5*(var[tuple(dim_ranges_1)] + var[tuple(dim_ranges_2)])
-
-    return result
+def destagger_xr(da, dim, new_dim_name):
+    return 0.5 * (
+        da.isel({dim: slice(0, -1)}) +
+        da.isel({dim: slice(1, None)})
+    ).rename({dim: new_dim_name})
 
 def read_filenames_from_csv(csv_path):
     files = []
@@ -56,25 +40,31 @@ def read_filenames_from_csv(csv_path):
 def load_data(data_dir, files):
 
     data_dict = {}
-    for file in files:
-        file_path = data_dir / file
-        logging.info(f"Loading WRF file: {file_path}")
-        ds = xr.open_dataset(file_path)
-        U = ds.variables["U"][0, :, :, :]
-        V = ds.variables["V"][0, :, :, :]
-        PH = ds.variables["PH"][0, :, :, :]
-        PHB = ds.variables["PHB"][0, :, :, :]
-        ds.close()
 
-        Z = (PH + PHB) / 9.81
+    ds = xr.open_mfdataset(
+        [data_dir / f for f in files],
+        combine="nested",
+        concat_dim="Time",
+        chunks={"Time": 1, "bottom_top": 20, "south_north": 100, "west_east": 100}
+    )
 
-        U_destag = destagger(U.values, 2)
-        V_destag = destagger(V.values, 1)
-        Z_destag = destagger(Z.values, 0)
+    U = ds["U"].isel(Time=0)
+    V = ds["V"].isel(Time=0)
+    PH = ds["PH"].isel(Time=0)
+    PHB = ds["PHB"].isel(Time=0)
+    ds.close()
 
-        V2 = (np.array(U_destag) ** 2 + np.array(V_destag) ** 2) ** 0.5
+    Z = (PH + PHB) / 9.81
 
-        data_dict[file] = {"Z": Z_destag, "U": U_destag, "V": V_destag, "V2": V2}
+    U_destag = destagger_xr(U.values, "west_east_stag", "west_east")
+    V_destag = destagger_xr(V.values, "south_north_stag", "south_north")
+    Z_destag = destagger_xr(Z.values, "bottom_top_stag", "bottom_top")
+
+    U_destag, V_destag = xr.align(U_destag, V_destag)
+
+    V2 = (np.array(U_destag) ** 2 + np.array(V_destag) ** 2) ** 0.5
+
+    data_dict = {"Z": Z_destag, "U": U_destag, "V": V_destag, "V2": V2}
 
     return data_dict
 
@@ -88,23 +78,17 @@ def find_nearest_height(Z, target_height):
     return nearest_index
 
 def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, lower_z, upper_z):
-    vertical_slice_ls = []
-    for key in data_dict.keys():
-        V2 = data_dict[key]["V2"]
-        vertical_slice = np.mean(
-            V2[:, turbine_y - int(rotor_diameter / dx / 2):turbine_y + int(rotor_diameter / dx / 2), :], axis=1)
-        vertical_slice_ls.append(vertical_slice)
-    mean_vertical_slice = np.mean(np.array(vertical_slice_ls), axis=0)
+    V2 = data_dict["V2"]
+    vertical_slice = V2[:, :, turbine_y - int(rotor_diameter / dx / 2):turbine_y + int(rotor_diameter / dx / 2), :]
+    mean_vertical_slice = vertical_slice.mean(dim="Time").compute()
 
     # --- Coordinate arrays ---
     # x: uniform spacing
     nx = mean_vertical_slice.shape[1]
     x = np.arange(nx) * dx
 
-    # z: uneven spacing (assumed same for all keys)
-    sample_key = list(data_dict.keys())[0]
-    Z_full = data_dict[sample_key]["Z"]
-    z = Z_full[:, turbine_x, turbine_y]  # representative vertical profile
+    # z: uneven spacing
+    z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)  # representative vertical profile
 
     fig, ax = plt.subplots(figsize=(10, 6))
     cf = ax.contourf(x, z[:60], mean_vertical_slice[:60, :], levels=20, cmap='viridis')
@@ -127,24 +111,20 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     mins = []
     maxes = []
     fig, ax = plt.subplots(figsize=(10, 6))
+    y_coords = np.arange(ny) * dx
+    Y = y_coords[np.newaxis, np.newaxis, :]
     for i, dict in enumerate([turbine_dict, no_turbine_dict]):
-        lines_ls = []
-        for key in dict.keys():
-            Z = dict[key]["Z"]
-            V2 = dict[key]["V2"]
+        Z = dict["Z"]
+        V2 = dict["V2"]
 
-            # select the indices which intersect the blade area
-            y_coords = np.arange(ny) * dx
-            Y = y_coords[np.newaxis, :]
-            dist_sq = (Y - turbine_y * dx) ** 2 + (Z[:, :, 0] - turbine_hub_height) ** 2
+        # select the indices which intersect the blade area
+        dist_sq = (Y - turbine_y * dx) ** 2 + (Z[:, :, :, 0] - turbine_hub_height) ** 2
 
-            rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
+        rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
 
-            lines = V2[rotor_mask]
-            lines_ls.append(lines)
-        all_lines = np.concatenate(lines_ls)
-        mean_line = np.mean(all_lines, axis=0)
-        std_line = np.std(all_lines, axis=0)
+        lines = V2[rotor_mask]
+        mean_line = lines.mean(dim="Time").compute()
+        std_line = lines.std(dim="Time").compute()
         mins.append(np.min(mean_line - std_line))
         maxes.append(np.max(mean_line + std_line))
 
@@ -165,18 +145,15 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
 def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, turbine_hub_height, rotor_diameter, turbine_x, turbine_y):
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     mean_speeds = []
+    V2 = data_dict["V2"]
+    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)
+    index = find_nearest_height(Z, turbine_hub_height)
     for width in widths:
-        width_mean_speeds = []
-        for key in data_dict.keys():
-            V2 = data_dict[key]["V2"]
-            Z = data_dict[key]["Z"][:, turbine_x, turbine_y]
-            index = find_nearest_height(Z, turbine_hub_height)
-            grid_cell = V2[
-                index, int(turbine_y - width / 2):int(turbine_y + width / 2), turbine_x - int(width):turbine_x]
-            mean_wind_speed = np.mean(grid_cell)
-            width_mean_speeds.append(mean_wind_speed)
-        width_mean_speeds = np.array(width_mean_speeds)
-        mean_speeds.append(np.mean(width_mean_speeds))
+        grid_cell = V2.isel(bottom_top=index,
+                            south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
+                            west_east=slice(turbine_x - int(width), turbine_x))
+        mean_wind_speed = grid_cell.mean(dim=("Time", "bottom_top", "south_north")).compute()
+        mean_speeds.append(mean_wind_speed)
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(widths, mean_speeds, marker='o')
     ax.set_xlabel(r'$\Delta x$')
@@ -193,27 +170,24 @@ def get_colors(n, cmap_name='viridis'):
 
 def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_cell_size, max_cell_size, lower_z, upper_z, turbine_x, turbine_y):
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
-    heights = np.arange(lower_z[0], upper_z[0])
+    heights = np.arange(lower_z, upper_z)
     color_set = get_colors(len(heights), cmap_name='viridis')
     fig, ax = plt.subplots(figsize=(10, 6))
+    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)
     for i, height in enumerate(heights):
         mean_speeds = []
         for width in widths:
-            width_mean_speeds = []
-            for key in data_dict.keys():
-                V2 = data_dict[key]["V2"]
-                V2_no_turbine = no_turbine_dict[key]["V2"]
-                Z = data_dict[key]["Z"][:, turbine_x, turbine_y]
-                grid_cell_turbine = V2[
-                    height, int(turbine_y - width / 2):int(turbine_y + width / 2), turbine_x - int(width):turbine_x]
-                grid_cell_no_turbine = V2_no_turbine[
-                    height, int(turbine_y - width / 2):int(turbine_y + width / 2), turbine_x - int(width):turbine_x
-                ]
-                grid_cell_delta = grid_cell_turbine - grid_cell_no_turbine
-                mean_wind_speed = np.mean(grid_cell_delta)
-                width_mean_speeds.append(mean_wind_speed)
-            width_mean_speeds = np.array(width_mean_speeds)
-            mean_speeds.append(np.mean(width_mean_speeds))
+            V2 = data_dict["V2"]
+            V2_no_turbine = no_turbine_dict["V2"]
+            grid_cell_turbine = V2.isel(bottom_top=height,
+                                south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
+                                west_east=slice(turbine_x - int(width), turbine_x))
+            grid_cell_no_turbine = V2_no_turbine.isel(bottom_top=height,
+                                south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
+                                west_east=slice(turbine_x - int(width), turbine_x))
+            grid_cell_delta = grid_cell_turbine - grid_cell_no_turbine
+            mean_wind_speed = grid_cell_delta.mean(dim=("Time", "bottom_top", "south_north")).compute()
+            mean_speeds.append(mean_wind_speed)
         if i == 0 or i == len(heights) - 1:
             ax.plot(1 / (widths * dx), mean_speeds, color=color_set[i], marker='o', label=f'{Z[height]:.0f} m')
         else:
@@ -235,8 +209,8 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
     FIGURE_DIR = FIGURE_DIR / timestamp
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
 
-    lower_z = find_nearest_height(turbine_dict[FILES[0]]["Z"][:, TURBINE_Y, TURBINE_X], HUB_HEIGHT - ROTOR_DIAMETER / 2)
-    upper_z = find_nearest_height(turbine_dict[FILES[0]]["Z"][:, TURBINE_Y, TURBINE_X], HUB_HEIGHT + ROTOR_DIAMETER / 2)
+    lower_z = find_nearest_height(turbine_dict["Z"].isel(Time=0, west_east=TURBINE_X, south_north=TURBINE_Y), HUB_HEIGHT - ROTOR_DIAMETER / 2)[0]
+    upper_z = find_nearest_height(turbine_dict["Z"].isel(Time=0, west_east=TURBINE_X, south_north=TURBINE_Y), HUB_HEIGHT + ROTOR_DIAMETER / 2)[0]
 
     plot_vertical_slice(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, lower_z, upper_z)
     plot_axial_wind_speed(turbine_dict, no_turbine_dict, FIGURE_DIR, NY, NX, DX, TURBINE_X, TURBINE_Y, HUB_HEIGHT,

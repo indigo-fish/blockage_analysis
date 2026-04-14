@@ -56,9 +56,9 @@ def load_data(data_dir, files):
 
     Z = (PH + PHB) / 9.81
 
-    U_destag = destagger_xr(U.values, "west_east_stag", "west_east")
-    V_destag = destagger_xr(V.values, "south_north_stag", "south_north")
-    Z_destag = destagger_xr(Z.values, "bottom_top_stag", "bottom_top")
+    U_destag = destagger_xr(U, "west_east_stag", "west_east")
+    V_destag = destagger_xr(V, "south_north_stag", "south_north")
+    Z_destag = destagger_xr(Z, "bottom_top_stag", "bottom_top")
 
     U_destag, V_destag = xr.align(U_destag, V_destag)
 

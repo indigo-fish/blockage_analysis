@@ -250,7 +250,7 @@ def plot_cell_wind_speed_delta(
             ax.plot(1 / (widths * dx), mean_speeds,
                     color=color_set[i], marker='o')
     ax.legend()
-    ax.set_xlabel(r'$\Delta x$ (m)')
+    ax.set_xlabel(r'$1/\Delta x$ (1/m)')
     ax.set_ylabel('Average upstream wind speed deficit (m/s)')
     plt.tight_layout()
     output_path = figure_dir / 'grid_cell_wind_speed_delta.png'

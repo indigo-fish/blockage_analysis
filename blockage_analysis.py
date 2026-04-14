@@ -79,8 +79,8 @@ def find_nearest_height(Z, target_height):
 
 def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, lower_z, upper_z):
     V2 = data_dict["V2"]
-    vertical_slice = V2.isel(west_east=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)))
-    mean_vertical_slice = vertical_slice.mean(dim="Time").compute()
+    vertical_slice = V2.isel(south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)))
+    mean_vertical_slice = vertical_slice.mean(dim=("Time", "south_north")).compute()
 
     # --- Coordinate arrays ---
     # x: uniform spacing

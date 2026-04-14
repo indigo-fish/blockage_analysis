@@ -111,20 +111,26 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     mins = []
     maxes = []
     fig, ax = plt.subplots(figsize=(10, 6))
-    y_coords = np.arange(ny) * dx
-    Y = y_coords[np.newaxis, np.newaxis, :]
+    Y = xr.DataArray(
+        np.arange(ny) * dx,
+        dims=["south_north"],
+    )
+
+
     for i, dict in enumerate([turbine_dict, no_turbine_dict]):
         Z = dict["Z"]
         V2 = dict["V2"]
 
         # select the indices which intersect the blade area
-        dist_sq = (Y - turbine_y * dx) ** 2 + (Z[:, :, :, 0] - turbine_hub_height) ** 2
+        Z_slice = Z.isel(west_east=0)  # match dims
+
+        dist_sq = (Y - turbine_y * dx) ** 2 + (Z_slice - turbine_hub_height) ** 2
 
         rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
 
-        lines = V2[rotor_mask]
-        mean_line = lines.mean(dim="Time").compute()
-        std_line = lines.std(dim="Time").compute()
+        lines = V2.where(rotor_mask)
+        mean_line = lines.mean(dim="Time", skipna=True).compute()
+        std_line = lines.std(dim="Time", skipna=True).compute()
         mins.append(np.min(mean_line - std_line))
         maxes.append(np.max(mean_line + std_line))
 

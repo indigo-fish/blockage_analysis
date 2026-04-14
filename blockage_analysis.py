@@ -180,7 +180,7 @@ def plot_cell_wind_speed_delta(
     dx, min_cell_size, max_cell_size,
     lower_z, upper_z, turbine_x, turbine_y
 ):
-    widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
+    outer_widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     heights = np.arange(lower_z, upper_z)
     color_set = get_colors(len(heights), cmap_name='viridis')
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -189,7 +189,7 @@ def plot_cell_wind_speed_delta(
     delta = V2 - V2_no_turbine
 
     # Restrict to upstream window (max width)
-    max_w = int(widths.max())
+    max_w = int(outer_widths.max())
     y_min = int(turbine_y - max_w // 2)
     y_max = int(turbine_y + max_w // 2)
     x_min = int(turbine_x - max_w)
@@ -207,7 +207,9 @@ def plot_cell_wind_speed_delta(
 
     results = []
 
-    for width in widths[:-1]:
+    widths = outer_widths[:-1]
+
+    for width in widths:
         w = int(width)
 
         # define slices relative to subdomain

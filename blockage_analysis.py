@@ -86,7 +86,7 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     # --- Coordinate arrays ---
     # x: uniform spacing
     nx = mean_vertical_slice.shape[1]
-    x = np.arange(nx) * dx - turbine_x
+    x = np.arange(nx) * dx - turbine_x * dx
 
     # z: uneven spacing
     z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)  # representative vertical profile
@@ -128,7 +128,7 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
         dims=["south_north"],
     )
 
-    nx_dx = np.arange(0, nx) * dx - turbine_x
+    nx_dx = np.arange(0, nx) * dx - turbine_x * dx
 
     for i, dict in enumerate([turbine_dict, no_turbine_dict]):
         Z = dict["Z"]

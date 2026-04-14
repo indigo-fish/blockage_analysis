@@ -9,8 +9,6 @@ import logging
 
 from dask.distributed import Client
 
-client = Client(processes=True, n_workers=8, threads_per_worker=4)
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -340,6 +338,9 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
     return turbine_dict
 
 if __name__ == "__main__":
+
+    client = Client(processes=True, n_workers=8, threads_per_worker=4)
+
     parser = argparse.ArgumentParser(description="Process WRF wind turbine data")
 
     parser.add_argument("--hub_height", type=float, default=90)

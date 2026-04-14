@@ -129,8 +129,8 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
         rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
 
         lines = V2.where(rotor_mask)
-        mean_line = lines.mean(dim="Time", skipna=True).compute()
-        std_line = lines.std(dim="Time", skipna=True).compute()
+        mean_line = lines.mean(dim=("Time", "bottom_top", "south_north"), skipna=True).compute()
+        std_line = lines.std(dim=("Time", "bottom_top", "south_north"), skipna=True).compute()
         mins.append(np.min(mean_line - std_line))
         maxes.append(np.max(mean_line + std_line))
 

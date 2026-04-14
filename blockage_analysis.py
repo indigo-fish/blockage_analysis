@@ -61,6 +61,7 @@ def load_data(data_dir, files):
     U_destag, V_destag = xr.align(U_destag, V_destag)
 
     V2 = (U_destag**2 + V_destag**2)**0.5
+    V2 = V2.persist()
 
     data_dict = {"Z": Z_destag, "U": U_destag, "V": V_destag, "V2": V2}
 

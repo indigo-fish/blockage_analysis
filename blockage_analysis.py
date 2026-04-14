@@ -175,34 +175,83 @@ def get_colors(n, cmap_name='viridis'):
     cmap = plt.get_cmap(cmap_name)
     return [cmap(i) for i in np.linspace(0, 1, n)]
 
-def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_cell_size, max_cell_size, lower_z, upper_z, turbine_x, turbine_y):
+def plot_cell_wind_speed_delta(
+    data_dict, no_turbine_dict, figure_dir,
+    dx, min_cell_size, max_cell_size,
+    lower_z, upper_z, turbine_x, turbine_y
+):
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     heights = np.arange(lower_z, upper_z)
     color_set = get_colors(len(heights), cmap_name='viridis')
     fig, ax = plt.subplots(figsize=(10, 6))
-    Z = np.array(data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y))
+    V2 = data_dict["V2"]
+    V2_no_turbine = no_turbine_dict["V2"]
+    delta = V2 - V2_no_turbine
+
+    # Restrict to upstream window (max width)
+    max_w = int(widths.max())
+    y_min = int(turbine_y - max_w // 2)
+    y_max = int(turbine_y + max_w // 2)
+    x_min = int(turbine_x - max_w)
+    x_max = turbine_x
+
+    delta_sub = delta.isel(
+        bottom_top=slice(lower_z, upper_z),
+        south_north=slice(y_min, y_max),
+        west_east=slice(x_min, x_max)
+    )
+
+    # --- CUMULATIVE SUM trick ---
+    # cumulative sum along west_east (streamwise)
+    cumsum_x = delta_sub.cumsum(dim="west_east")
+
+    results = []
+
+    for width in widths:
+        w = int(width)
+
+        # define slices relative to subdomain
+        y0 = (y_max - y_min) // 2 - w // 2
+        y1 = y0 + w
+
+        x0 = max_w - w
+        x1 = max_w
+
+        # compute box sum using cumsum
+        # sum over x via difference
+        x_sum = cumsum_x.isel(west_east=x1 - 1) - cumsum_x.isel(west_east=x0 - 1)
+
+        # restrict y
+        box = x_sum.isel(south_north=slice(y0, y1))
+
+        # mean over spatial + time
+        mean_val = box.mean(dim=("Time", "south_north"))
+
+        results.append(mean_val)
+
+    # stack widths → new dimension
+    result_da = xr.concat(results, dim="width")
+    result_da = result_da.assign_coords(width=("width", widths))
+
+    # compute ONCE
+    result_da = result_da.compute()
+
+    # --- Plot ---
+    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y).compute()
+
     for i, height in enumerate(heights):
-        mean_speeds = []
-        for width in widths:
-            V2 = data_dict["V2"]
-            V2_no_turbine = no_turbine_dict["V2"]
-            grid_cell_turbine = V2.isel(bottom_top=height,
-                                south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
-                                west_east=slice(turbine_x - int(width), turbine_x))
-            grid_cell_no_turbine = V2_no_turbine.isel(bottom_top=height,
-                                south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
-                                west_east=slice(turbine_x - int(width), turbine_x))
-            grid_cell_delta = grid_cell_turbine - grid_cell_no_turbine
-            mean_wind_speed = grid_cell_delta.mean(dim=("Time", "south_north", "west_east")).compute()
-            mean_speeds.append(mean_wind_speed)
+        mean_speeds = result_da.isel(bottom_top=i)
+
         if i == 0 or i == len(heights) - 1:
-            ax.plot(1 / (widths * dx), mean_speeds, color=color_set[i], marker='o', label=f'{Z[height]:.0f} m')
+            ax.plot(1 / (widths * dx), mean_speeds,
+                    color=color_set[i], marker='o',
+                    label=f'{Z[height]:.0f} m')
         else:
-            ax.plot(1 / (widths * dx), mean_speeds, color=color_set[i], marker='o')
+            ax.plot(1 / (widths * dx), mean_speeds,
+                    color=color_set[i], marker='o')
     ax.legend()
     ax.set_xlabel(r'$\Delta x$ (m)')
     ax.set_ylabel('Average upstream wind speed deficit (m/s)')
-    # ax.set_title(r'Projected upstream wind speed deficit for different effective mesoscale grid sizes')
     plt.tight_layout()
     output_path = figure_dir / 'grid_cell_wind_speed_delta.png'
     plt.savefig(output_path, dpi=200)

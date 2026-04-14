@@ -225,7 +225,7 @@ def plot_cell_wind_speed_delta(
         box = x_sum.isel(south_north=slice(y0, y1))
 
         # mean over spatial + time
-        mean_val = box.mean(dim=("Time", "south_north"))
+        mean_val = box.mean(dim=("Time", "south_north")) / width
 
         results.append(mean_val)
 

@@ -39,8 +39,6 @@ def read_filenames_from_csv(csv_path):
 
 def load_data(data_dir, files):
 
-    data_dict = {}
-
     ds = xr.open_mfdataset(
         [data_dir / f for f in files],
         combine="nested",
@@ -48,10 +46,10 @@ def load_data(data_dir, files):
         chunks={"Time": 1, "bottom_top": 20, "south_north": 100, "west_east": 100}
     )
 
-    U = ds["U"].isel(Time=0)
-    V = ds["V"].isel(Time=0)
-    PH = ds["PH"].isel(Time=0)
-    PHB = ds["PHB"].isel(Time=0)
+    U = ds["U"]
+    V = ds["V"]
+    PH = ds["PH"]
+    PHB = ds["PHB"]
     ds.close()
 
     Z = (PH + PHB) / 9.81

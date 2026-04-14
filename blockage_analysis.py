@@ -179,7 +179,7 @@ def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_c
     heights = np.arange(lower_z, upper_z)
     color_set = get_colors(len(heights), cmap_name='viridis')
     fig, ax = plt.subplots(figsize=(10, 6))
-    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)
+    Z = np.array(data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y))
     for i, height in enumerate(heights):
         mean_speeds = []
         for width in widths:

@@ -86,7 +86,7 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     # --- Coordinate arrays ---
     # x: uniform spacing
     nx = mean_vertical_slice.shape[1]
-    x = np.arange(nx) * dx
+    x = np.arange(nx) * dx - turbine_x
 
     # z: uneven spacing
     z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)  # representative vertical profile
@@ -97,16 +97,27 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     # ax.set_title('Mean Vertical Slice of Wind Speed through Turbine Rotor Width')
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Z (m)')
-    ax.vlines([turbine_x * dx], z[lower_z], z[upper_z],
+    ax.vlines([0], z[lower_z], z[upper_z],
               color='black', linestyle='dashed', label='turbine position')
     ax.legend()
+
+    # --- Secondary x-axis in rotor diameters ---
+    def meters_to_D(x):
+        return x / rotor_diameter
+
+    def D_to_meters(x):
+        return x * rotor_diameter
+
+    secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
+    secax.set_xlabel(r'X (Rotor Diameters, $D$)')
+
     plt.tight_layout()
     output_path = figure_dir / 'mean_vertical_slice.png'
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
 def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx, turbine_x, turbine_y, turbine_hub_height, rotor_diameter):
-    labels = ['turbine', 'no turbine']
+    labels = ['with turbine', 'without turbine']
     mean_colours = ['blue', 'grey']
     std_colours = ['lightblue', 'lightgrey']
     mins = []
@@ -117,6 +128,7 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
         dims=["south_north"],
     )
 
+    nx_dx = np.arange(0, nx) * dx - turbine_x
 
     for i, dict in enumerate([turbine_dict, no_turbine_dict]):
         Z = dict["Z"]
@@ -135,15 +147,26 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
         mins.append(np.min(mean_line - std_line))
         maxes.append(np.max(mean_line + std_line))
 
-        ax.fill_between(np.arange(0, nx) * dx, mean_line - std_line, mean_line + std_line,
+        ax.fill_between(nx_dx, mean_line - std_line, mean_line + std_line,
                         color=std_colours[i], alpha=0.5, label=f'±1 Std Dev {labels[i]}')
-        ax.plot(np.arange(0, nx) * dx, mean_line, label=f'Mean {labels[i]}', color=mean_colours[i])
+        ax.plot(nx_dx, mean_line, label=f'Mean {labels[i]}', color=mean_colours[i])
     # ax.set_title('Wind speed along turbine axis')
-    ax.vlines([turbine_x * dx], min(mins), max(maxes), color='black', linestyle='dashed', label='turbine position')
+    ax.vlines([0], min(mins), max(maxes), color='black', linestyle='dashed', label='turbine position')
     ax.legend()
 
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Wind Speed (m/s)')
+
+    # --- Secondary x-axis in rotor diameters ---
+    def meters_to_D(x):
+        return x / rotor_diameter
+
+    def D_to_meters(x):
+        return x * rotor_diameter
+
+    secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
+    secax.set_xlabel(r'X (Rotor Diameters, $D$)')
+
     plt.tight_layout()
     output_path = figure_dir / 'mean_axial_wind_speed.png'
     plt.savefig(output_path, dpi=200)

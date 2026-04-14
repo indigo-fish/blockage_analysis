@@ -7,6 +7,10 @@ from datetime import datetime
 import csv
 import logging
 
+from dask.distributed import Client
+
+client = Client(processes=True, n_workers=8, threads_per_worker=4)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -120,44 +124,74 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     labels = ['with turbine', 'without turbine']
     mean_colours = ['blue', 'grey']
     std_colours = ['lightblue', 'lightgrey']
-    mins = []
-    maxes = []
     fig, ax = plt.subplots(figsize=(10, 6))
+
     Y = xr.DataArray(
         np.arange(ny) * dx,
         dims=["south_north"],
     )
-
     nx_dx = np.arange(0, nx) * dx - turbine_x * dx
 
-    for i, dict in enumerate([turbine_dict, no_turbine_dict]):
-        Z = dict["Z"]
+    # --- Build rotor mask ONCE ---
+    Z = turbine_dict["Z"]  # same grid for both cases
+
+    dist_sq = ((Y - turbine_y * dx) ** 2 + (Z - turbine_hub_height) ** 2)
+
+    rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
+
+    results = []
+
+    for dict in [turbine_dict, no_turbine_dict]:
         V2 = dict["V2"]
 
-        # select the indices which intersect the blade area
-        Z_slice = Z.isel(west_east=0)  # match dims
-
-        dist_sq = (Y - turbine_y * dx) ** 2 + (Z_slice - turbine_hub_height) ** 2
-
-        rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
-
         lines = V2.where(rotor_mask)
-        mean_line = lines.mean(dim=("Time", "bottom_top", "south_north"), skipna=True).compute()
-        std_line = lines.std(dim=("Time", "bottom_top", "south_north"), skipna=True).compute()
+
+        # compute both stats in ONE graph execution
+        stats = xr.Dataset({
+            "mean": lines.mean(dim=("Time", "bottom_top", "south_north"), skipna=True),
+            "std":  lines.std(dim=("Time", "bottom_top", "south_north"), skipna=True)
+        })
+
+        results.append(stats)
+
+    # 🔥 single compute for EVERYTHING
+    results = xr.concat(results, dim="case").compute()
+
+    mins = []
+    maxes = []
+
+    for i in range(2):
+        mean_line = results["mean"].isel(case=i)
+        std_line  = results["std"].isel(case=i)
+
         mins.append(np.min(mean_line - std_line))
         maxes.append(np.max(mean_line + std_line))
 
-        ax.fill_between(nx_dx, mean_line - std_line, mean_line + std_line,
-                        color=std_colours[i], alpha=0.5, label=f'±1 Std Dev {labels[i]}')
-        ax.plot(nx_dx, mean_line, label=f'Mean {labels[i]}', color=mean_colours[i])
-    # ax.set_title('Wind speed along turbine axis')
-    ax.vlines([0], min(mins), max(maxes), color='black', linestyle='dashed', label='turbine position')
-    ax.legend()
+        ax.fill_between(
+            nx_dx,
+            mean_line - std_line,
+            mean_line + std_line,
+            color=std_colours[i],
+            alpha=0.5,
+            label=f'±1 Std Dev {labels[i]}'
+        )
 
+        ax.plot(
+            nx_dx,
+            mean_line,
+            label=f'Mean {labels[i]}',
+            color=mean_colours[i]
+        )
+
+    ax.vlines([0], min(mins), max(maxes),
+              color='black', linestyle='dashed',
+              label='turbine position')
+
+    ax.legend()
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Wind Speed (m/s)')
 
-    # --- Secondary x-axis in rotor diameters ---
+    # --- Secondary axis ---
     def meters_to_D(x):
         return x / rotor_diameter
 

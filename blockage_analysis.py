@@ -158,7 +158,7 @@ def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_
         grid_cell = V2.isel(bottom_top=index,
                             south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
                             west_east=slice(turbine_x - int(width), turbine_x))
-        mean_wind_speed = grid_cell.mean(dim=("Time", "south_north")).compute()
+        mean_wind_speed = grid_cell.mean(dim=("Time", "south_north", "west_east")).compute()
         mean_speeds.append(mean_wind_speed)
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(widths, mean_speeds, marker='o')
@@ -192,7 +192,7 @@ def plot_cell_wind_speed_delta(data_dict, no_turbine_dict, figure_dir, dx, min_c
                                 south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
                                 west_east=slice(turbine_x - int(width), turbine_x))
             grid_cell_delta = grid_cell_turbine - grid_cell_no_turbine
-            mean_wind_speed = grid_cell_delta.mean(dim=("Time", "bottom_top", "south_north")).compute()
+            mean_wind_speed = grid_cell_delta.mean(dim=("Time", "south_north", "west_east")).compute()
             mean_speeds.append(mean_wind_speed)
         if i == 0 or i == len(heights) - 1:
             ax.plot(1 / (widths * dx), mean_speeds, color=color_set[i], marker='o', label=f'{Z[height]:.0f} m')

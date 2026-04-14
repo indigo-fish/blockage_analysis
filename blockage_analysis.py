@@ -64,6 +64,8 @@ def load_data(data_dir, files):
 
     data_dict = {"Z": Z_destag, "U": U_destag, "V": V_destag, "V2": V2}
 
+    logging.info(f"Loaded data from {data_dir}")
+
     return data_dict
 
 def find_nearest_height(Z, target_height):
@@ -77,7 +79,7 @@ def find_nearest_height(Z, target_height):
 
 def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, lower_z, upper_z):
     V2 = data_dict["V2"]
-    vertical_slice = V2[:, :, turbine_y - int(rotor_diameter / dx / 2):turbine_y + int(rotor_diameter / dx / 2), :]
+    vertical_slice = V2.isel(west_east=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)))
     mean_vertical_slice = vertical_slice.mean(dim="Time").compute()
 
     # --- Coordinate arrays ---

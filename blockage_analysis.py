@@ -6,7 +6,6 @@ import argparse
 from datetime import datetime
 import csv
 import logging
-from scipy.stats import ttest_rel
 
 logging.basicConfig(
     level=logging.INFO,
@@ -128,7 +127,6 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     mins = []
     maxes = []
     fig, ax = plt.subplots(figsize=(10, 6))
-    t_test_data = []
     for i, dict in enumerate([turbine_dict, no_turbine_dict]):
         lines_ls = []
         for key in dict.keys():
@@ -145,7 +143,6 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
             lines = V2[rotor_mask]
             lines_ls.append(lines)
         all_lines = np.concatenate(lines_ls)
-        t_test_data.append(all_lines)
         mean_line = np.mean(all_lines, axis=0)
         std_line = np.std(all_lines, axis=0)
         mins.append(np.min(mean_line - std_line))
@@ -154,37 +151,6 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
         ax.fill_between(np.arange(0, nx) * dx, mean_line - std_line, mean_line + std_line,
                         color=std_colours[i], alpha=0.5, label=f'±1 Std Dev {labels[i]}')
         ax.plot(np.arange(0, nx) * dx, mean_line, label=f'Mean {labels[i]}', color=mean_colours[i])
-
-    turbine_lines, no_turbine_lines = t_test_data
-
-    # --- T-TESTS ---
-    p_values = []
-    for i in range(nx):
-        t_stat, p_val = ttest_rel(
-            turbine_lines[:, i],
-            no_turbine_lines[:, i],
-            nan_policy='omit'
-        )
-        p_values.append(p_val)
-
-    p_values = np.array(p_values)
-
-    # --- Mark significant regions ---
-    alpha = 0.05
-    significant = p_values < alpha
-
-    # plot significance as markers along bottom
-    x_vals = np.arange(0, nx) * dx
-    y_min = ax.get_ylim()[0]
-
-    ax.scatter(
-        x_vals[significant],
-        np.full(np.sum(significant), y_min),
-        color='red',
-        s=10,
-        label='p < 0.05'
-    )
-
     # ax.set_title('Wind speed along turbine axis')
     ax.vlines([turbine_x * dx], min(mins), max(maxes), color='black', linestyle='dashed', label='turbine position')
     ax.legend()

@@ -372,7 +372,7 @@ if __name__ == "__main__":
     NO_TURBINE_DIR = Path(args.noturbine_dir)
     FIGURE_DIR = Path(args.figure_dir)
 
-    neutral_data = main(
+    main(
         TURBINE_DIR,
         NO_TURBINE_DIR,
         FILES,
@@ -385,3 +385,5 @@ if __name__ == "__main__":
         args.turbine_y,
         args.turbine_x,
     )
+
+    client.close()

@@ -85,7 +85,8 @@ def find_nearest_height(Z, target_height):
 def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, lower_z, upper_z):
     V2 = data_dict["V2"]
     vertical_slice = V2.isel(south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)))
-    mean_vertical_slice = vertical_slice.mean(dim=("Time", "south_north")).compute()
+    mean_vertical_slice = vertical_slice.mean(dim=("Time", "south_north"))
+    mean_vertical_slice = mean_vertical_slice.isel(bottom_top=slice(0, 60)).compute()
 
     # --- Coordinate arrays ---
     # x: uniform spacing
@@ -93,10 +94,10 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     x = np.arange(nx) * dx - turbine_x * dx
 
     # z: uneven spacing
-    z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)  # representative vertical profile
+    z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y, bottom_top=slice(0, 60)).compute()  # representative vertical profile
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    cf = ax.contourf(x, z[:60], mean_vertical_slice[:60, :], levels=20, cmap='viridis')
+    cf = ax.contourf(x, z, mean_vertical_slice, levels=20, cmap='viridis')
     plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
     # ax.set_title('Mean Vertical Slice of Wind Speed through Turbine Rotor Width')
     ax.set_xlabel('X (m)')

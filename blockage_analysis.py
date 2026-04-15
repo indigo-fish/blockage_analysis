@@ -205,14 +205,28 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
-def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, turbine_hub_height, rotor_diameter, turbine_x, turbine_y):
+
+def build_rotor_mask(dx, ny, rotor_diameter, turbine_dict, turbine_hub_height, turbine_y) -> Any:
+    Y = xr.DataArray(
+        np.arange(ny) * dx,
+        dims=["south_north"],
+    )
+
+    # --- Build rotor mask ONCE ---
+    Z = turbine_dict["Z"]  # same grid for both cases
+
+    dist_sq = ((Y - turbine_y * dx) ** 2 + (Z - turbine_hub_height) ** 2)
+
+    rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
+    return rotor_mask
+
+
+def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, hub_index, turbine_x, turbine_y):
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     mean_speeds = []
     V2 = data_dict["V2"]
-    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y)
-    index = find_nearest_height(Z, turbine_hub_height)[0]
     for width in widths:
-        grid_cell = V2.isel(bottom_top=index,
+        grid_cell = V2.isel(bottom_top=hub_index,
                             south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
                             west_east=slice(turbine_x - int(width), turbine_x))
         mean_wind_speed = grid_cell.mean(dim=("Time", "south_north", "west_east")).compute()
@@ -234,14 +248,23 @@ def get_colors(n, cmap_name='viridis'):
 def plot_cell_wind_speed_delta(
     data_dict, no_turbine_dict, figure_dir,
     dx, min_cell_size, max_cell_size,
-    lower_z, upper_z, turbine_x, turbine_y
+    hub_height, hub_index, turbine_x, turbine_y, rotor_diameter
 ):
     outer_widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
-    heights = np.arange(lower_z, upper_z)
-    color_set = get_colors(len(heights), cmap_name='viridis')
+    widths = outer_widths[:-1]
+    inv_deltax = 1 / (widths * dx)
     fig, ax = plt.subplots(figsize=(10, 6))
     V2 = data_dict["V2"]
     V2_no_turbine = no_turbine_dict["V2"]
+
+    u_infty = V2_no_turbine.isel(bottom_top=hub_index).mean(dim=("Time", "south_north", "west_east"))
+    u = V2.isel(bottom_top=hub_index, south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)), west_east=turbine_x / dx).mean(dim=("Time", "south_north"))
+    a = 1 - u / u_infty
+    C_T = 4 * a * (1 - a)
+    A = (rotor_diameter / 2) ** 2 * np.pi
+
+    pred_delta_u = .5 * np.sqrt(1 - C_T) * A * u_infty / rotor_diameter * widths
+
     delta = V2 - V2_no_turbine
 
     # Restrict to upstream window (max width)
@@ -252,7 +275,7 @@ def plot_cell_wind_speed_delta(
     x_max = turbine_x
 
     delta_sub = delta.isel(
-        bottom_top=slice(lower_z, upper_z),
+        bottom_top=hub_index,
         south_north=slice(y_min, y_max),
         west_east=slice(x_min, x_max)
     )
@@ -262,8 +285,6 @@ def plot_cell_wind_speed_delta(
     cumsum_x = delta_sub.cumsum(dim="west_east")
 
     results = []
-
-    widths = outer_widths[:-1]
 
     for width in widths:
         w = int(width)
@@ -295,18 +316,13 @@ def plot_cell_wind_speed_delta(
     result_da = result_da.compute()
 
     # --- Plot ---
-    Z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y).compute()
 
-    for i, height in enumerate(heights):
-        mean_speeds = result_da.isel(bottom_top=i)
+    mean_speeds = result_da
 
-        if i == 0 or i == len(heights) - 1:
-            ax.plot(1 / (widths * dx), mean_speeds,
-                    color=color_set[i], marker='o',
-                    label=f'{Z[height]:.0f} m')
-        else:
-            ax.plot(1 / (widths * dx), mean_speeds,
-                    color=color_set[i], marker='o')
+    ax.plot(inv_deltax, mean_speeds,
+            color='blue', marker='o',
+            label=f'hub height {hub_height}')
+    ax.plot(inv_deltax, pred_delta_u, color='grey', linestyle='dashed', label=f'approximation in AIF')
     ax.legend()
     ax.set_xlabel(r'$1/\Delta x$ (1/m)')
     ax.set_ylabel('Average upstream wind speed deficit (m/s)')
@@ -323,18 +339,21 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
     FIGURE_DIR = FIGURE_DIR / timestamp
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
 
-    lower_z = find_nearest_height(turbine_dict["Z"].isel(Time=0, west_east=TURBINE_X, south_north=TURBINE_Y), HUB_HEIGHT - ROTOR_DIAMETER / 2)[0]
-    upper_z = find_nearest_height(turbine_dict["Z"].isel(Time=0, west_east=TURBINE_X, south_north=TURBINE_Y), HUB_HEIGHT + ROTOR_DIAMETER / 2)[0]
+    Z_turbine = turbine_dict["Z"].isel(Time=0, west_east=TURBINE_X, south_north=TURBINE_Y)
+
+    lower_z = find_nearest_height(Z_turbine, HUB_HEIGHT - ROTOR_DIAMETER / 2)[0]
+    upper_z = find_nearest_height(Z_turbine, HUB_HEIGHT + ROTOR_DIAMETER / 2)[0]
+    hub_index = find_nearest_height(Z_turbine, HUB_HEIGHT)[0]
 
     plot_vertical_slice(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, lower_z, upper_z)
     plot_axial_wind_speed(turbine_dict, no_turbine_dict, FIGURE_DIR, NY, NX, DX, TURBINE_X, TURBINE_Y, HUB_HEIGHT,
                           ROTOR_DIAMETER)
     min_cell = 5 * ROTOR_DIAMETER
     max_cell = 2500
-    plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, HUB_HEIGHT,
-                                  ROTOR_DIAMETER, TURBINE_X, TURBINE_Y)
-    plot_cell_wind_speed_delta(turbine_dict, no_turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, lower_z, upper_z,
-                               TURBINE_X, TURBINE_Y)
+    plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, hub_index,
+                                  TURBINE_X, TURBINE_Y)
+    plot_cell_wind_speed_delta(turbine_dict, no_turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, HUB_HEIGHT, hub_index,
+                               TURBINE_X, TURBINE_Y, ROTOR_DIAMETER)
     return turbine_dict
 
 if __name__ == "__main__":

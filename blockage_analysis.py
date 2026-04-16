@@ -205,6 +205,35 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
+    delta = turbine_dict["V2"] - no_turbine_dict["V2"]
+    delta_lines = delta.where(rotor_mask)
+    stats = xr.Dataset({
+        "mean": lines.mean(dim=("Time", "bottom_top", "south_north"), skipna=True),
+        "std": lines.std(dim=("Time", "bottom_top", "south_north"), skipna=True)
+    })
+    mean_delta = stats["mean"]
+    std_delta = stats["std"]
+    n = delta_lines.shape[0]
+    se = std_delta / np.sqrt(n)
+    ax.plot(x_vals, mean_delta, color='black')
+    ax.fill_between(
+        x_vals,
+        mean_delta - se,
+        mean_delta + se,
+        color='grey',
+        alpha=0.4
+    )
+    ax.axhline(0, linestyle='dashed', color='black')
+
+    ax.legend()
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Wind Speed (m/s)')
+
+    plt.tight_layout()
+    output_path = figure_dir / 'mean_axial_wind_speed.png'
+    plt.savefig(output_path, dpi=200)
+    logging.info(f"Saved plot: {output_path}")
+
 
 def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, hub_index, turbine_x, turbine_y):
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
@@ -238,11 +267,11 @@ def plot_cell_wind_speed_delta(
     outer_widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     widths = outer_widths[:-1]
     inv_deltax = 1 / (widths * dx)
-    fig, ax = plt.subplots(figsize=(10, 6))
     V2 = data_dict["V2"]
     V2_no_turbine = no_turbine_dict["V2"]
 
     u_infty = V2_no_turbine.isel(bottom_top=hub_index).mean(dim=("Time", "south_north", "west_east")).values
+    logging.info(u_infty)
     # u = V2.isel(bottom_top=hub_index, south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)), west_east=turbine_x).mean(dim=("Time", "south_north")).values
     # a = 1 - u / u_infty
     # C_T = 4 * a * (1 - a)
@@ -305,6 +334,8 @@ def plot_cell_wind_speed_delta(
 
     mean_speeds = result_da
 
+    # units of wind speed
+    fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(inv_deltax, mean_speeds,
             color='blue', marker='o',
             label=f'hub height {hub_height}')
@@ -314,6 +345,20 @@ def plot_cell_wind_speed_delta(
     ax.set_ylabel('Average upstream wind speed deficit (m/s)')
     plt.tight_layout()
     output_path = figure_dir / 'grid_cell_wind_speed_delta.png'
+    plt.savefig(output_path, dpi=200)
+    logging.info(f"Saved plot: {output_path}")
+
+    # unitless
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(inv_deltax, mean_speeds / u_infty,
+            color='blue', marker='o',
+            label=f'hub height {hub_height}')
+    ax.plot(inv_deltax, pred_delta_u / u_infty, color='grey', linestyle='dashed', label=f'approximation in AIF')
+    ax.legend()
+    ax.set_xlabel(r'$1/\Delta x$ (1/m)')
+    ax.set_ylabel('Normalized upstream wind speed deficit')
+    plt.tight_layout()
+    output_path = figure_dir / 'grid_cell_normalized_delta.png'
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 

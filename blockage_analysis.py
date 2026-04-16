@@ -206,21 +206,6 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     logging.info(f"Saved plot: {output_path}")
 
 
-def build_rotor_mask(dx, ny, rotor_diameter, turbine_dict, turbine_hub_height, turbine_y) -> Any:
-    Y = xr.DataArray(
-        np.arange(ny) * dx,
-        dims=["south_north"],
-    )
-
-    # --- Build rotor mask ONCE ---
-    Z = turbine_dict["Z"]  # same grid for both cases
-
-    dist_sq = ((Y - turbine_y * dx) ** 2 + (Z - turbine_hub_height) ** 2)
-
-    rotor_mask = dist_sq <= (rotor_diameter / 2) ** 2
-    return rotor_mask
-
-
 def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, hub_index, turbine_x, turbine_y):
     widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     mean_speeds = []

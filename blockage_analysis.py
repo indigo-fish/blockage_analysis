@@ -242,8 +242,8 @@ def plot_cell_wind_speed_delta(
     V2 = data_dict["V2"]
     V2_no_turbine = no_turbine_dict["V2"]
 
-    u_infty = V2_no_turbine.isel(bottom_top=hub_index).mean(dim=("Time", "south_north", "west_east"))
-    u = V2.isel(bottom_top=hub_index, south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)), west_east=turbine_x / dx).mean(dim=("Time", "south_north"))
+    u_infty = V2_no_turbine.isel(bottom_top=int(hub_index)).mean(dim=("Time", "south_north", "west_east"))
+    u = V2.isel(bottom_top=int(hub_index), south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)), west_east=turbine_x / dx).mean(dim=("Time", "south_north"))
     a = 1 - u / u_infty
     C_T = 4 * a * (1 - a)
     A = (rotor_diameter / 2) ** 2 * np.pi

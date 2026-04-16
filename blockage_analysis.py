@@ -248,7 +248,7 @@ def plot_cell_wind_speed_delta(
     C_T = 4 * a * (1 - a)
     A = (rotor_diameter / 2) ** 2 * np.pi
 
-    pred_delta_u = .5 * np.sqrt(1 - C_T) * A * u_infty / rotor_diameter * widths
+    pred_delta_u = .5 * np.sqrt(1 - C_T) * A * u_infty / rotor_diameter * inv_deltax
 
     delta = V2 - V2_no_turbine
 

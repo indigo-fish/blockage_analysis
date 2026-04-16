@@ -245,9 +245,6 @@ def plot_cell_wind_speed_delta(
     u_infty = V2_no_turbine.isel(bottom_top=hub_index).mean(dim=("Time", "south_north", "west_east")).values
     u = V2.isel(bottom_top=hub_index, south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)), west_east=turbine_x).mean(dim=("Time", "south_north")).values
     a = 1 - u / u_infty
-    logging.info(u_infty.shape)
-    logging.info(u.shape)
-    logging.info(a.shape)
     C_T = 4 * a * (1 - a)
     A = (rotor_diameter / 2) ** 2 * np.pi
 

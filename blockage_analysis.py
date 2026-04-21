@@ -11,6 +11,8 @@ import warnings
 from dask.distributed import Client
 from dask.utils import SerializableLock
 
+lock = SerializableLock()
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -48,7 +50,6 @@ def read_filenames_from_csv(csv_path):
     return files
 
 def load_data(data_dir, files):
-    lock = SerializableLock()
 
     ds = xr.open_mfdataset(
         [data_dir/ file for file in files],

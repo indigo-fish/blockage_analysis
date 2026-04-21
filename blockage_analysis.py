@@ -51,7 +51,7 @@ def load_data(data_dir, files):
     lock = SerializableLock()
 
     ds = xr.open_mfdataset(
-        files,
+        [data_dir/ file for file in files],
         engine="netcdf4",
         combine="nested",
         concat_dim="Time",

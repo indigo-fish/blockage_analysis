@@ -406,7 +406,7 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
 
 if __name__ == "__main__":
 
-    client = Client(processes=True, n_workers=26, threads_per_worker=4)
+    client = Client(processes=False, n_workers=26, threads_per_worker=4)
 
     parser = argparse.ArgumentParser(description="Process WRF wind turbine data")
 

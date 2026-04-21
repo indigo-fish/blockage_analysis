@@ -52,9 +52,10 @@ def load_data(data_dir, files):
         engine="netcdf4",
         combine="nested",
         concat_dim="Time",
-        chunks={"Time": 1, "bottom_top": 20, "south_north": 100, "west_east": 100},
+        chunks={"Time": 1},
         parallel=True,
-        lock=True,  # 🔑 critical for your earlier crash
+        lock=True,
+        decode_cf=False,
     )
 
     U = ds["U"]

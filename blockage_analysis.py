@@ -12,7 +12,7 @@ from dask.distributed import Client
 from dask.utils import SerializableLock
 
 lock = SerializableLock()
-xr.set_options(file_cache_maxsize=0)
+xr.set_options(file_cache_maxsize=1)
 
 logging.basicConfig(
     level=logging.INFO,

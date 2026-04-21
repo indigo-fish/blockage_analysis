@@ -68,7 +68,6 @@ def load_data(data_dir, files):
     V = ds["V"]
     PH = ds["PH"]
     PHB = ds["PHB"]
-    ds.close()
 
     Z = (PH + PHB) / 9.81
 

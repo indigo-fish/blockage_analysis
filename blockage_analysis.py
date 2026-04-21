@@ -228,9 +228,9 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     std_delta = stats["std"]
     n = delta_lines.shape[0]
     se = std_delta / np.sqrt(n)
-    ax.plot(x_vals, mean_delta, color='black')
+    ax.plot(nx_dx, mean_delta, color='black')
     ax.fill_between(
-        x_vals,
+        nx_dx,
         mean_delta - se,
         mean_delta + se,
         color='grey',
@@ -243,7 +243,7 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     ax.set_ylabel('Wind Speed (m/s)')
 
     plt.tight_layout()
-    output_path = figure_dir / 'mean_axial_wind_speed.png'
+    output_path = figure_dir / 'axial_wind_speed_difference.png'
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 

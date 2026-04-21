@@ -12,6 +12,7 @@ from dask.distributed import Client
 from dask.utils import SerializableLock
 
 lock = SerializableLock()
+xr.set_options(file_cache_maxsize=0)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,6 +61,7 @@ def load_data(data_dir, files):
         parallel=True,
         lock=lock,
         decode_cf=False,
+        cache=False,
     )
 
     U = ds["U"]

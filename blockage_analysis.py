@@ -58,7 +58,7 @@ def load_data(data_dir, files):
         combine="nested",
         concat_dim="Time",
         chunks={"Time": 1},
-        parallel=True,
+        parallel=False,
         lock=lock,
         decode_cf=False,
         cache=False,

@@ -49,12 +49,12 @@ def read_filenames_from_csv(csv_path):
 def load_data(data_dir, files):
     ds = xr.open_mfdataset(
         [data_dir / f for f in files],
-        combine="by_coords",
-        chunks={"Time": 1},
-        engine="h5netcdf",
+        engine="netcdf4",
+        combine="nested",
+        concat_dim="Time",
+        chunks={"Time": 1, "bottom_top": 20, "south_north": 100, "west_east": 100},
         parallel=True,
-        coords="minimal",
-        compat="override",
+        lock=True,  # 🔑 critical for your earlier crash
     )
 
     U = ds["U"]

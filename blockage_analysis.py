@@ -6,12 +6,19 @@ import argparse
 from datetime import datetime
 import csv
 import logging
+import warnings
 
 from dask.distributed import Client
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module="distributed.client",
 )
 
 plt.rcParams.update({
@@ -307,7 +314,7 @@ def plot_cell_wind_speed_delta(
 
     ax.plot(inv_deltax, mean_speeds,
             color='blue', marker='o',
-            label=f'hub height {hub_height}')
+            label=f'hub height ({hub_height} m) in LES')
     ax.plot(inv_deltax, pred_delta_u, color='grey', linestyle='dashed', label=f'approximation in AIF')
     ax.legend()
     ax.set_xlabel(r'$1/\Delta x$ (1/m)')

@@ -218,14 +218,16 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
+    fig, ax = plt.subplots(figsize=(10, 6))
+
     delta = turbine_dict["V2"] - no_turbine_dict["V2"]
     delta_lines = delta.where(rotor_mask)
-    stats = xr.Dataset({
-        "mean": lines.mean(dim=("Time", "bottom_top", "south_north"), skipna=True),
-        "std": lines.std(dim=("Time", "bottom_top", "south_north"), skipna=True)
+    delta_stats = xr.Dataset({
+        "mean": delta_lines.mean(dim=("Time", "bottom_top", "south_north"), skipna=True),
+        "std": delta_lines.std(dim=("Time", "bottom_top", "south_north"), skipna=True)
     })
-    mean_delta = stats["mean"]
-    std_delta = stats["std"]
+    mean_delta = delta_stats["mean"]
+    std_delta = delta_stats["std"]
     n = delta_lines.shape[0]
     se = std_delta / np.sqrt(n)
     ax.plot(nx_dx, mean_delta, color='black')
@@ -365,7 +367,7 @@ def plot_cell_wind_speed_delta(
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(inv_deltax, mean_speeds / u_infty,
             color='blue', marker='o',
-            label=f'hub height {hub_height}')
+            label=f'hub height ({hub_height} m) in LES')
     ax.plot(inv_deltax, pred_delta_u / u_infty, color='grey', linestyle='dashed', label=f'approximation in AIF')
     ax.legend()
     ax.set_xlabel(r'$1/\Delta x$ (1/m)')

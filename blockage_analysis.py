@@ -47,12 +47,14 @@ def read_filenames_from_csv(csv_path):
     return files
 
 def load_data(data_dir, files):
-
     ds = xr.open_mfdataset(
         [data_dir / f for f in files],
-        combine="nested",
-        concat_dim="Time",
-        chunks={"Time": 1, "bottom_top": 20, "south_north": 100, "west_east": 100}
+        combine="by_coords",
+        chunks={"Time": 1},
+        engine="h5netcdf",
+        parallel=True,
+        coords="minimal",
+        compat="override",
     )
 
     U = ds["U"]

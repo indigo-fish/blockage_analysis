@@ -355,8 +355,8 @@ def plot_cell_wind_speed_delta(
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(inv_deltax, mean_speeds,
             color='blue', marker='o',
-            label=f'hub height ({hub_height} m) in LES')
-    ax.plot(inv_deltax, pred_delta_u, color='grey', linestyle='dashed', label=f'approximation in AIF')
+            label=f'deficit in hub height ({hub_height} m) in LES')
+    ax.plot(inv_deltax, pred_delta_u, color='green', linestyle='dashed', label=f'implied deficit in AIF')
     ax.legend()
     ax.set_xlabel(r'$1/\Delta x$ (1/m)')
     ax.set_ylabel('Average upstream wind speed deficit (m/s)')

@@ -7,6 +7,7 @@ from datetime import datetime
 import csv
 import logging
 import warnings
+import pandas as pd
 
 from dask.distributed import Client
 from dask.utils import SerializableLock
@@ -134,6 +135,9 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
+    df = pd.DataFrame(data=mean_vertical_slice, index=z, columns=x)
+    df.to_csv(figure_dir / 'mean_vertical_slice.csv', index=True)
+
 def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx, turbine_x, turbine_y, turbine_hub_height, rotor_diameter):
     labels = ['with turbine', 'without turbine']
     mean_colours = ['blue', 'grey']
@@ -250,6 +254,9 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     output_path = figure_dir / 'axial_wind_speed_difference.png'
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
+
+    df = pd.DataFrame(data={"mean": mean_delta, "std": std_delta})
+    df.to_csv(figure_dir / 'axial_wind_speed.csv', index=True)
 
 
 def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, hub_index, turbine_x, turbine_y):
@@ -378,6 +385,9 @@ def plot_cell_wind_speed_delta(
     output_path = figure_dir / 'grid_cell_normalized_delta.png'
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
+    
+    df = pd.DataFrame(data={"predicted": pred_delta_u, "actual": mean_speeds})
+    df.to_csv(figure_dir / 'grid_cell_wind_speed_delta.csv', index=True)
 
 def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):
     turbine_dict = load_data(TURBINE_DIR, FILES)
@@ -393,9 +403,9 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
     upper_z = find_nearest_height(Z_turbine, HUB_HEIGHT + ROTOR_DIAMETER / 2)[0]
     hub_index = find_nearest_height(Z_turbine, HUB_HEIGHT)[0]
 
-    # plot_vertical_slice(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, lower_z, upper_z)
-    # plot_axial_wind_speed(turbine_dict, no_turbine_dict, FIGURE_DIR, NY, NX, DX, TURBINE_X, TURBINE_Y, HUB_HEIGHT,
-    #                       ROTOR_DIAMETER)
+    plot_vertical_slice(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, lower_z, upper_z)
+    plot_axial_wind_speed(turbine_dict, no_turbine_dict, FIGURE_DIR, NY, NX, DX, TURBINE_X, TURBINE_Y, HUB_HEIGHT,
+                          ROTOR_DIAMETER)
     min_cell = 5 * ROTOR_DIAMETER
     max_cell = 2500
     # plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, hub_index,

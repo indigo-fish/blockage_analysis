@@ -78,7 +78,7 @@ def load_data(data_dir, files):
     U_destag, V_destag = xr.align(U_destag, V_destag)
 
     V2 = (U_destag**2 + V_destag**2)**0.5
-    V2 = V2.persist()
+    # V2 = V2.persist()
 
     data_dict = {"Z": Z_destag, "U": U_destag, "V": V_destag, "V2": V2}
 
@@ -393,20 +393,20 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
     upper_z = find_nearest_height(Z_turbine, HUB_HEIGHT + ROTOR_DIAMETER / 2)[0]
     hub_index = find_nearest_height(Z_turbine, HUB_HEIGHT)[0]
 
-    plot_vertical_slice(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, lower_z, upper_z)
-    plot_axial_wind_speed(turbine_dict, no_turbine_dict, FIGURE_DIR, NY, NX, DX, TURBINE_X, TURBINE_Y, HUB_HEIGHT,
-                          ROTOR_DIAMETER)
+    # plot_vertical_slice(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, lower_z, upper_z)
+    # plot_axial_wind_speed(turbine_dict, no_turbine_dict, FIGURE_DIR, NY, NX, DX, TURBINE_X, TURBINE_Y, HUB_HEIGHT,
+    #                       ROTOR_DIAMETER)
     min_cell = 5 * ROTOR_DIAMETER
     max_cell = 2500
-    plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, hub_index,
-                                  TURBINE_X, TURBINE_Y)
+    # plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, hub_index,
+    #                               TURBINE_X, TURBINE_Y)
     plot_cell_wind_speed_delta(turbine_dict, no_turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, HUB_HEIGHT, hub_index,
                                TURBINE_X, TURBINE_Y, ROTOR_DIAMETER)
     return turbine_dict
 
 if __name__ == "__main__":
 
-    client = Client(processes=True, n_workers=26, threads_per_worker=4)
+    client = Client(processes=True, n_workers=26, threads_per_worker=2, direct_to_workers=False)
 
     parser = argparse.ArgumentParser(description="Process WRF wind turbine data")
 

@@ -105,8 +105,8 @@ def wrf_times_to_datetime(ds):
     Convert WRF 'Times' (char array) into pandas datetime and attach as ds['time'] coordinate.
     Works for Times shaped (Time, DateStrLen) or (Time,) strings.
     """
-    if "Times" not in ds:
-        raise KeyError("Dataset has no 'Times' variable.")
+    if "Time" not in ds:
+        raise KeyError("Dataset has no 'Time' variable.")
 
     tvals = ds["Time"].values
     # Cases:

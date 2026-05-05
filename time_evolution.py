@@ -129,9 +129,9 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, hub_height,
     ax.set_xlabel('Time')
     ax.set_ylabel('Z (m)')
 
-    ax.hlines([hub_height], time[0], time[-1], color='black', linestyle='dashed', label='hub height')
-    ax.vlines(time[-3], 0, z[-1], color='green', linestyle='dotted', label='inner domain start')
-    ax.vlines(time[-2], 0, z[-1], color='orange', linestyle='dashdot', label='analysis start')
+    ax.hlines([hub_height], time[0], time[-1], color='black', linestyle='dashed', linewidth=2, label='hub height')
+    ax.vlines(time[-3], 0, z[-1], color='purple', linestyle='dotted', linewidth=2, label='inner domain start')
+    ax.vlines(time[-2], 0, z[-1], color='orange', linestyle='dashdot', linewidth=2, label='analysis start')
 
     ax.legend()
 

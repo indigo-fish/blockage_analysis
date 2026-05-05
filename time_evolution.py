@@ -105,10 +105,7 @@ def wrf_times_to_datetime(ds):
     Convert WRF 'Times' (char array) into pandas datetime and attach as ds['time'] coordinate.
     Works for Times shaped (Time, DateStrLen) or (Time,) strings.
     """
-    if "Time" not in ds:
-        raise KeyError("Dataset has no 'Time' variable.")
-
-    tvals = ds["Time"].values
+    tvals = ds.coords["Time"].values
     # Cases:
     #  - char array: shape (Time, DateStrLen) dtype 'S1' or 'U1'
     #  - byte strings: shape (Time,) dtype 'S19'
@@ -133,7 +130,7 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
 
     # --- Coordinate arrays ---
     # x: uniform spacing
-    time = V2.dims['Time']
+    time = V2.coords['Time']
 
     # z: uneven spacing
     z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y,

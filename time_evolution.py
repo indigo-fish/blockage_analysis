@@ -131,7 +131,7 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
 
     # --- Coordinate arrays ---
     # x: uniform spacing
-    time = [filename[12:] for filename in FILES]
+    time = [filename[11:] for filename in FILES]
     time = [
         datetime.strptime(t, "%Y-%m-%d_%H_%M_%S")
         for t in time
@@ -143,8 +143,9 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
 
     fig, ax = plt.subplots(figsize=(10, 6))
     logging.info(time)
-    logging.info(z.shape())
-    cf = ax.contourf(time, z, mean_horizontal_slice, levels=20, cmap='viridis', vmin=3, vmax=12)
+    logging.info(z.shape)
+    logging.info(mean_horizontal_slice.shape)
+    cf = ax.contourf(time, z, mean_horizontal_slice.T, levels=20, cmap='viridis', vmin=3, vmax=12)
 
     plt.gcf().autofmt_xdate()  # rotates dates nicely
     plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
@@ -156,7 +157,7 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
-    df = pd.DataFrame(data=mean_horizontal_slice, index=z, columns=x)
+    df = pd.DataFrame(data=mean_horizontal_slice, index=time, columns=z)
     df.to_csv(figure_dir / 'time_evolution.csv', index=True)
 
 def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):

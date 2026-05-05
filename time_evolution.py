@@ -100,34 +100,11 @@ def find_nearest_height(Z, target_height):
     return nearest_index
 
 
-def wrf_times_to_datetime(ds):
-    """
-    Convert WRF 'Times' (char array) into pandas datetime and attach as ds['time'] coordinate.
-    Works for Times shaped (Time, DateStrLen) or (Time,) strings.
-    """
-    tvals = ds.coords["Time"].values
-    # Cases:
-    #  - char array: shape (Time, DateStrLen) dtype 'S1' or 'U1'
-    #  - byte strings: shape (Time,) dtype 'S19'
-    if tvals.ndim == 2:
-        # join each row into a string
-        strings = ["".join(row.astype(str)) for row in tvals]
-    else:
-        strings = [s.decode() if hasattr(s, "decode") else str(s) for s in tvals]
-
-    # WRF format usually "YYYY-MM-DD_HH:MM:SS"
-    dt = pd.to_datetime([s.replace("_", " ") for s in strings], errors="coerce")
-    logging.info(dt)
-    return ds.assign_coords(time=("Time", dt))
-
-
-def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, hub_index, FILES):
+def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, hub_index, FILES):
     V2 = data_dict["V2"]
     horizontal_slice = V2.isel(
         bottom_top=slice(0, 60))
     mean_horizontal_slice = horizontal_slice.mean(dim=("west_east", "south_north")).compute()
-
-    mean_horizontal_slice = wrf_times_to_datetime(mean_horizontal_slice)
 
     # --- Coordinate arrays ---
     # x: uniform spacing
@@ -152,6 +129,10 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     ax.set_xlabel('Time')
     ax.set_ylabel('Z (m)')
 
+    ax.hlines([hub_index], time[0], time[-1], color='black', linestyle='dashed', label='hub height')
+
+    ax.legend()
+
     plt.tight_layout()
     output_path = figure_dir / 'time_evolution.png'
     plt.savefig(output_path, dpi=200)
@@ -160,9 +141,8 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     df = pd.DataFrame(data=mean_horizontal_slice, index=time, columns=z)
     df.to_csv(figure_dir / 'time_evolution.csv', index=True)
 
-def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):
+def main(TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, TURBINE_Y, TURBINE_X):
     turbine_dict = load_data(TURBINE_DIR, FILES)
-    no_turbine_dict = load_data(NO_TURBINE_DIR, FILES)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     FIGURE_DIR = FIGURE_DIR / timestamp
@@ -172,7 +152,7 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
 
     hub_index = find_nearest_height(Z_turbine, HUB_HEIGHT)[0]
 
-    plot_time_evolution(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, hub_index, FILES)
+    plot_time_evolution(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, hub_index, FILES)
     return turbine_dict
 
 
@@ -182,17 +162,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process WRF wind turbine data")
 
     parser.add_argument("--hub_height", type=float, default=90)
-    parser.add_argument("--rotor_diameter", type=float, default=127)
 
     parser.add_argument("--dx", type=float, default=10)
-    parser.add_argument("--ny", type=int, default=501)
-    parser.add_argument("--nx", type=int, default=702)
 
     parser.add_argument("--turbine_y", type=int, default=250)
     parser.add_argument("--turbine_x", type=int, default=250)
 
     parser.add_argument("--turbine_dir", type=str, default="neutral")
-    parser.add_argument("--noturbine_dir", type=str, default="neutral_no-turbine")
     parser.add_argument("--figure_dir", type=str, default="Figures/neutral")
 
     parser.add_argument(
@@ -207,19 +183,13 @@ if __name__ == "__main__":
     FILES = read_filenames_from_csv(args.file_list)
 
     TURBINE_DIR = Path(args.turbine_dir)
-    NO_TURBINE_DIR = Path(args.noturbine_dir)
     FIGURE_DIR = Path(args.figure_dir)
 
     main(
         TURBINE_DIR,
-        NO_TURBINE_DIR,
         FILES,
         FIGURE_DIR,
         args.hub_height,
-        args.rotor_diameter,
-        args.dx,
-        args.ny,
-        args.nx,
         args.turbine_y,
         args.turbine_x,
     )

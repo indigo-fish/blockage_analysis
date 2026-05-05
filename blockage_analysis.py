@@ -255,7 +255,7 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
-    df = pd.DataFrame(data={"mean": mean_delta, "std": std_delta})
+    df = pd.DataFrame(data={"mean": mean_delta, "std": std_delta, "nx_dx": nx_dx})
     df.to_csv(figure_dir / 'axial_wind_speed.csv', index=True)
 
 
@@ -385,8 +385,8 @@ def plot_cell_wind_speed_delta(
     output_path = figure_dir / 'grid_cell_normalized_delta.png'
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
-    
-    df = pd.DataFrame(data={"predicted": pred_delta_u, "actual": mean_speeds})
+
+    df = pd.DataFrame(data={"predicted": pred_delta_u, "actual": mean_speeds, "widths": widths, "inv_deltax": inv_deltax})
     df.to_csv(figure_dir / 'grid_cell_wind_speed_delta.csv', index=True)
 
 def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):

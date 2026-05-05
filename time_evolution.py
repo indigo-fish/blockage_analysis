@@ -108,7 +108,7 @@ def wrf_times_to_datetime(ds):
     if "Times" not in ds:
         raise KeyError("Dataset has no 'Times' variable.")
 
-    tvals = ds["Times"].values
+    tvals = ds["Time"].values
     # Cases:
     #  - char array: shape (Time, DateStrLen) dtype 'S1' or 'U1'
     #  - byte strings: shape (Time,) dtype 'S19'

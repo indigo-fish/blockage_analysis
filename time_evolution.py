@@ -117,10 +117,11 @@ def wrf_times_to_datetime(ds):
 
     # WRF format usually "YYYY-MM-DD_HH:MM:SS"
     dt = pd.to_datetime([s.replace("_", " ") for s in strings], errors="coerce")
+    logging.info(dt)
     return ds.assign_coords(time=("Time", dt))
 
 
-def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, hub_index):
+def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, hub_index, FILES):
     V2 = data_dict["V2"]
     horizontal_slice = V2.isel(
         bottom_top=slice(0, 60))
@@ -130,14 +131,22 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
 
     # --- Coordinate arrays ---
     # x: uniform spacing
-    time = V2.coords['Time']
+    time = [filename[12:] for filename in FILES]
+    time = [
+        datetime.strptime(t, "%Y-%m-%d_%H_%M_%S")
+        for t in time
+    ]
 
     # z: uneven spacing
     z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y,
                             bottom_top=slice(0, 60)).compute()  # representative vertical profile
 
     fig, ax = plt.subplots(figsize=(10, 6))
+    logging.info(time)
+    logging.info(z.shape())
     cf = ax.contourf(time, z, mean_horizontal_slice, levels=20, cmap='viridis', vmin=3, vmax=12)
+
+    plt.gcf().autofmt_xdate()  # rotates dates nicely
     plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
     ax.set_xlabel('Time')
     ax.set_ylabel('Z (m)')
@@ -162,7 +171,7 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
 
     hub_index = find_nearest_height(Z_turbine, HUB_HEIGHT)[0]
 
-    plot_time_evolution(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, hub_index)
+    plot_time_evolution(turbine_dict, FIGURE_DIR, TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, DX, hub_index, FILES)
     return turbine_dict
 
 

@@ -111,7 +111,7 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
     z = data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y, bottom_top=slice(0, 60)).compute()  # representative vertical profile
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    cf = ax.contourf(x, z, mean_vertical_slice, levels=20, cmap='viridis')
+    cf = ax.contourf(x, z, mean_vertical_slice, levels=20, cmap='viridis', vmin=3, vmax=12)
     plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
     # ax.set_title('Mean Vertical Slice of Wind Speed through Turbine Rotor Width')
     ax.set_xlabel('X (m)')

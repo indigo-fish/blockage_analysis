@@ -1,0 +1,58 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib import gridspec
+
+neutral_no_turbine = pd.read_csv('mean_vertical_slice_neutral_no_turbine.csv', index_col=0, header=0)
+neutral_turbine = pd.read_csv('mean_vertical_slice_neutral_turbine.csv', index_col=0, header=0)
+stable_no_turbine = pd.read_csv('mean_vertical_slice_stable_no_turbine.csv', index_col=0, header=0)
+stable_turbine = pd.read_csv('mean_vertical_slice_stable_turbine.csv', index_col=0, header=0)
+datasets = [[neutral_no_turbine, neutral_turbine],[stable_no_turbine, stable_turbine]]
+labels = [['N_NWT', 'N_WT'], ['S_NWT', 'S_WT']]
+
+fig = plt.figure(figsize=(12, 8))
+
+outer = gridspec.GridSpec(ncols=2, nrows=1, hspace=0.2, wspace=0.1, width_ratios=[15, 1])
+
+gs = gridspec.GridSpecFromSubplotSpec(
+    2, 2, height_ratios=[1, 1], subplot_spec=outer[0], wspace=0.2, hspace=0.3
+)
+
+axes = [[None, None], [None, None]]
+
+for i in range(2):
+    for j in range(2):
+        if i == 0 and j == 0:
+            ax = fig.add_subplot(gs[j, i])
+        else:
+            ax = fig.add_subplot(gs[j, i],
+                                 sharex=axes[0][0],
+                                 sharey=axes[0][0])
+
+        axes[j][i] = ax
+        ds = datasets[i][j]
+        z = ds.index.astype('float').tolist()
+        x = ds.columns.astype('float').tolist()
+
+        levels = np.linspace(3.2, 11.6, 22)  # 20 intervals → 21 boundaries
+        cf = ax.contourf(x, z, ds.values, levels=levels, cmap='viridis')
+        ax.set_title(labels[i][j])
+
+        if j == 1:
+            ax.vlines([0], 90 - 127 / 2, 90 + 127 / 2,
+                      color='black', linestyle='dashed', label='turbine position')
+            ax.set_xlabel('X (m)')
+        else:
+            ax.tick_params(labelbottom=False)
+        if i == 0:
+            ax.set_ylabel('Z (m)')
+        else:
+            ax.tick_params(labelleft=False)
+
+ax.legend(loc='upper left')
+
+cax = fig.add_subplot(outer[1])
+plt.colorbar(cf, cax=cax, label='Wind Speed (m/s)')
+
+plt.tight_layout()
+plt.savefig('vertical_slices.png', bbox_inches='tight', dpi=300)

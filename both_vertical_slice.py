@@ -65,7 +65,7 @@ for i in range(2):
             ax.tick_params(labelleft=False)
 
         ax.text(
-            0.02, 0.98, f'({panel_labels[i][j]})',
+            0.02, 0.98, f'({panel_labels[j][i]})',
             transform=ax.transAxes,
             fontsize=18,
             fontweight='bold',

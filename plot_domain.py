@@ -28,6 +28,6 @@ ax.set_ylabel('Y (km)', fontsize=20)
 
 fig.tight_layout()
 
-plt.savefig('domain.png', bbox_inches='tight')
+plt.savefig('domain.png', bbox_inches='tight', dpi=300)
 
 plt.show()

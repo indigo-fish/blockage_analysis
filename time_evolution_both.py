@@ -1,6 +1,9 @@
+import matplotlib
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+
+plt.rcParams['font.size'] = 14
 
 neutral = pd.read_csv('time_evolution_neutral.csv', index_col=0, header=0).T
 stable = pd.read_csv('time_evolution_stable.csv', index_col=0, header=0).T
@@ -30,6 +33,7 @@ for i in range(2):
 plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
 ax.legend(loc='upper left')
 plt.ylim(bottom=0)
+axes[0].set_ylabel('height (m)')
 
 plt.tight_layout()
 output_path = 'time_evolution.png'

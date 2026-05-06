@@ -3,6 +3,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import gridspec
 
+plt.rcParams['font.size'] = 14
+
+# --- Secondary x-axis in rotor diameters ---
+def meters_to_D(x):
+    return x / 127
+
+def D_to_meters(x):
+    return x * 127
+
 neutral_no_turbine = pd.read_csv('mean_vertical_slice_neutral_no_turbine.csv', index_col=0, header=0)
 neutral_turbine = pd.read_csv('mean_vertical_slice_neutral_turbine.csv', index_col=0, header=0)
 stable_no_turbine = pd.read_csv('mean_vertical_slice_stable_no_turbine.csv', index_col=0, header=0)
@@ -19,6 +28,8 @@ gs = gridspec.GridSpecFromSubplotSpec(
 )
 
 axes = [[None, None], [None, None]]
+
+panel_labels = [['a', 'b'], ['c', 'd']]
 
 for i in range(2):
     for j in range(2):
@@ -42,14 +53,27 @@ for i in range(2):
             ax.vlines([0], 90 - 127 / 2, 90 + 127 / 2,
                       color='black', linestyle='dashed', label='turbine position')
             ax.set_xlabel('X (m)')
+            secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
+            secax.tick_params(labeltop=False)
         else:
             ax.tick_params(labelbottom=False)
+            secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
+            secax.set_xlabel(r'X (Rotor Diameters, $D$)')
         if i == 0:
-            ax.set_ylabel('Z (m)')
+            ax.set_ylabel('height (m)')
         else:
             ax.tick_params(labelleft=False)
 
-ax.legend(loc='upper left')
+        ax.text(
+            0.02, 0.98, f'({panel_labels[i][j]})',
+            transform=ax.transAxes,
+            fontsize=18,
+            fontweight='bold',
+            va='top',
+            ha='left'
+        )
+
+axes[1][0].legend(loc='upper right')
 
 cax = fig.add_subplot(outer[1])
 plt.colorbar(cf, cax=cax, label='Wind Speed (m/s)')

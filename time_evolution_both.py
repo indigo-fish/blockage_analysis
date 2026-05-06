@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 neutral = pd.read_csv('time_evolution_neutral.csv', index_col=0, header=0).T
 stable = pd.read_csv('time_evolution_stable.csv', index_col=0, header=0).T
@@ -12,7 +13,9 @@ for i in range(2):
     ds = datasets[i]
     time=ds.columns.astype('datetime64[ns]').tolist()
     z=ds.index.astype(float).tolist()
-    cf = ax.contourf(time, z, ds, levels=20, cmap='viridis', vmin=3, vmax=12)
+    levels = np.linspace(3.2, 11.6, 22)
+
+    cf = ax.contourf(time, z, ds, levels=levels, cmap='viridis')
 
 
     plt.gcf().autofmt_xdate()  # rotates dates nicely
@@ -30,4 +33,4 @@ plt.ylim(bottom=0)
 
 plt.tight_layout()
 output_path = 'time_evolution.png'
-plt.savefig(output_path, dpi=200)
+plt.savefig(output_path, bbox_inches='tight', dpi=300)

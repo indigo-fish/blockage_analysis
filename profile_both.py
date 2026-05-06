@@ -26,7 +26,7 @@ linestyle_map = {"stable": "solid", "neutral": "dashed", "unstable": "dotted"}
 
 fig, axes = plt.subplots(
     nrows=1, ncols=3,
-    figsize=(16, 5.5),
+    figsize=(16, 6.5),
     # sharey=True,
     constrained_layout=True
 )
@@ -57,28 +57,29 @@ for i, VARIABLE in enumerate(VARIABLES):
                  linestyle=linestyle_map[temp_label]
                  )
 
-    ax.set_ylabel('height (m)', fontsize=24)
-    ax.set_xlabel(UNITS, fontsize=24)
+    ax.set_ylabel('height (m)', fontsize=28)
+    ax.set_xlabel(UNITS, fontsize=28)
 
     ax.set_xlim(XMIN, XMAX)
     ax.set_ylim(0, 300)
 
     yticks = np.linspace(0, 300, 4)
     xticks = np.linspace(XMIN, XMAX, num_x_ticks)
-    ax.set_yticks(yticks, labels=yticks.astype(int), fontsize=20)
-    ax.set_xticks(xticks, labels=xticks.astype(int), fontsize=20)
+    ax.set_yticks(yticks, labels=yticks.astype(int), fontsize=24)
+    ax.set_xticks(xticks, labels=xticks.astype(int), fontsize=24)
 
     ax.axhspan(90 - 127/2, 90 + 127/2, facecolor='grey', alpha=0.5, label='turbine rotor area')
-    if VARIABLE=='windspeed':
-        ax.legend(fontsize=13, loc='center left')
     ax.text(
         0.02, 0.98, f'({panel_labels[i]})',
         transform=ax.transAxes,
-        fontsize=24,
+        fontsize=28,
         fontweight='bold',
         va='top',
         ha='left'
     )
+
+    if VARIABLE=='windspeed':
+        ax.legend(fontsize=16, loc='center left')
 
 print(f'Saving to {LOCATION}')
 plt.savefig(LOCATION, dpi=300, bbox_inches='tight')

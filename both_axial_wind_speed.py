@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams['font.size'] = 14
+panel_labels = ['a', 'b']
+
 neutral = pd.read_csv('axial_wind_speed_neutral.csv', index_col=0, header=0)
 stable = pd.read_csv('axial_wind_speed_stable.csv', index_col=0, header=0)
 datasets = [neutral, stable]
@@ -46,7 +49,6 @@ for i in range(2):
               label='turbine position')
 
     ax.set_xlabel('X (m)')
-    ax.set_ylabel('Wind Speed (m/s)')
 
     ax.set_title(labels[i])
 
@@ -62,6 +64,15 @@ for i in range(2):
     print("Different from 0")
     print(ds.loc[ds['mean'] + ds['std'] / np.sqrt(258) > 0])
 
+    ax.text(
+        0.02, 0.98, f'({panel_labels[i]})',
+        transform=ax.transAxes,
+        fontsize=18,
+        fontweight='bold',
+        va='top',
+        ha='left'
+    )
+axes[0].set_ylabel('Wind Speed (m/s)')
 axes[0].legend(loc='lower right')
 
 plt.tight_layout()

@@ -65,4 +65,4 @@ for i in range(2):
 axes[0].legend(loc='lower right')
 
 plt.tight_layout()
-plt.savefig('axial_wind_speed_delta.png', bbox_inches='tight')
+plt.savefig('axial_wind_speed_delta.png', bbox_inches='tight', dpi=300)

@@ -324,6 +324,7 @@ def plot_cell_wind_speed_delta(
     cumsum_x = delta_sub.cumsum(dim="west_east")
 
     results = []
+    std_results = []
 
     for width in widths:
         w = int(width)
@@ -340,19 +341,29 @@ def plot_cell_wind_speed_delta(
         x_sum = cumsum_x.isel(west_east=x1 - 1) - cumsum_x.isel(west_east=x0 - 1)
 
         # restrict y
-        box = x_sum.isel(south_north=slice(y0, y1))
+        # divide by width manually because we're summing rather than taking mean
+        box = x_sum.isel(south_north=slice(y0, y1)) / width
 
-        # mean over spatial + time
-        mean_val = box.mean(dim=("Time", "south_north")) / width
+        stats = xr.Dataset({
+            "mean": box.mean(dim=("Time", "south_north"), skipna=True),
+            "std": box.std(dim=("Time", "south_north"), skipna=True)
+        })
+        mean_val = stats["mean"]
+        std_val = stats["std"]
 
         results.append(mean_val)
+        std_results.append(std_val)
 
     # stack widths → new dimension
     result_da = xr.concat(results, dim="width")
     result_da = result_da.assign_coords(width=("width", widths))
 
+    std_result_da = xr.concat(std_results, dim="width")
+    std_result_da = std_result_da.assign_coords(width=("width", widths))
+
     # compute ONCE
     result_da = result_da.compute()
+    std_result_da = std_result_da.compute()
 
     # --- Plot ---
 
@@ -386,7 +397,7 @@ def plot_cell_wind_speed_delta(
     plt.savefig(output_path, dpi=200)
     logging.info(f"Saved plot: {output_path}")
 
-    df = pd.DataFrame(data={"predicted": pred_delta_u, "actual": mean_speeds, "widths": widths, "inv_deltax": inv_deltax})
+    df = pd.DataFrame(data={"predicted": pred_delta_u, "actual": mean_speeds, "widths": widths, "inv_deltax": inv_deltax, "std": std_result_da})
     df.to_csv(figure_dir / 'grid_cell_wind_speed_delta.csv', index=True)
 
 def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):

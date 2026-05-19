@@ -8,7 +8,7 @@ panel_labels = ['a', 'b']
 neutral = pd.read_csv('axial_wind_speed_neutral.csv', index_col=0, header=0)
 stable = pd.read_csv('axial_wind_speed_stable.csv', index_col=0, header=0)
 datasets = [neutral, stable]
-labels = [r'N_WT $-$ N_NWT', r'S_WT $-$ S_NWT']
+labels = ['Neutral', 'Stable']
 
 
 # --- Secondary axis ---

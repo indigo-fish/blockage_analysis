@@ -20,9 +20,12 @@ for i in range(2):
     inv_deltax = ds['inv_deltax']
     mean_speeds = ds['actual']
     pred_delta_u = ds['predicted']
-    ax.plot(inv_deltax, mean_speeds,
-            color=colors[i], marker=markers[i],
-            label=f'LES deficit: {labels[i]}',)
+    # calculate standard error from std and sample count (widths)
+    se = ds['std'] / np.sqrt(ds['widths'])
+    ax.errorbar(inv_deltax, mean_speeds,
+                yerr=se,
+                color=colors[i], marker=markers[i], linestyle='None', capsize=4,
+                label=f'LES deficit: {labels[i]}')
     ax.plot(inv_deltax, pred_delta_u, color=colors[i], linestyle=linestyles[i], linewidth=2.5, label=f'predicted in AIF: {labels[i]}')
 ax.plot([], [], color='turquoise', linestyle='dashdot', linewidth=2.5, label=f'predicted in AIF: both')
 ax.set_xlabel(r'$1/\Delta x$ (1/m)')
@@ -49,9 +52,12 @@ for i in range(2):
     inv_deltax = ds['inv_deltax']
     mean_speeds = ds['actual'] / u_infty
     pred_delta_u = ds['predicted'] / u_infty
-    ax.plot(inv_deltax, mean_speeds,
-            color=colors[i], marker=markers[i],
-            label=f'LES deficit: {labels[i]}',)
+    # calculate standard error from std and sample count (widths), propagate through normalization
+    se = (ds['std'] / np.sqrt(ds['widths'])) / u_infty
+    ax.errorbar(inv_deltax, mean_speeds,
+                yerr=se,
+                color=colors[i], marker=markers[i], linestyle='None', capsize=4,
+                label=f'LES deficit: {labels[i]}')
     if i == 1:
         ax.plot(inv_deltax, pred_delta_u, color='turquoise', linestyle='dashdot', linewidth=2.5, label=f'predicted in AIF: both')
 ax.set_xlabel(r'$1/\Delta x$ (1/m)')

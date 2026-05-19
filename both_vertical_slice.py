@@ -54,6 +54,8 @@ for i in range(2):
             ax.set_xlabel('X (m)')
             secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
             secax.tick_params(labeltop=False)
+            secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
+            secax.set_xlabel(r'X (Rotor Diameters, $D$)')
         else:
             ax.tick_params(labelbottom=False)
             secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))

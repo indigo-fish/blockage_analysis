@@ -17,7 +17,7 @@ neutral_turbine = pd.read_csv('mean_vertical_slice_neutral_turbine.csv', index_c
 stable_no_turbine = pd.read_csv('mean_vertical_slice_stable_no_turbine.csv', index_col=0, header=0)
 stable_turbine = pd.read_csv('mean_vertical_slice_stable_turbine.csv', index_col=0, header=0)
 datasets = [[neutral_no_turbine, neutral_turbine],[stable_no_turbine, stable_turbine]]
-labels = [['N_NWT', 'N_WT'], ['S_NWT', 'S_WT']]
+labels = [[None, 'Neutral'], [None, 'Stable']]
 
 fig = plt.figure(figsize=(12, 4))
 
@@ -29,7 +29,7 @@ gs = gridspec.GridSpecFromSubplotSpec(
 
 axes = [[None, None], [None, None]]
 
-panel_labels = [['a', 'b'], ['c', 'd']]
+panel_labels = [[None, 'a'], [None, 'b']]
 
 for i in range(2):
     for j in range(1, 2):
@@ -56,6 +56,7 @@ for i in range(2):
             secax.tick_params(labeltop=False)
             secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
             secax.set_xlabel(r'X (Rotor Diameters, $D$)')
+            ax.set_title(labels[i][j])
         else:
             ax.tick_params(labelbottom=False)
             secax = ax.secondary_xaxis('top', functions=(meters_to_D, D_to_meters))
@@ -64,6 +65,15 @@ for i in range(2):
             ax.set_ylabel('height (m)')
         else:
             ax.tick_params(labelleft=False)
+        ax.annotate(
+            f'({panel_labels[i][j]})',
+            xy=(0.02, 0.95),
+            xycoords='axes fraction',
+            fontsize=18,
+            fontweight='bold',
+            va='top',
+            ha='left'
+        )
 
 axes[1][0].legend(loc='upper right')
 

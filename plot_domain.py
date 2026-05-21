@@ -11,7 +11,7 @@ plt.scatter([.233 * 30 + 2.5], [.166 * 30 + 2.5], color='blue', s=15, label='tur
 
 ax.tick_params(axis='both', which='major', labelsize=18)
 
-rect = mpatches.Rectangle((.233 * 30, .166 * 30), 7, 5, ec='black', fill=False, linewidth=2)
+rect = mpatches.Rectangle((.233 * 30, .166 * 30), 7, 5, ec='blue', fill=False, linewidth=2)
 ax.add_patch(rect)
 
 plt.arrow(0.8, 12.5, 0.4, 0, width=.2, head_width=.6, color='grey')
@@ -19,6 +19,9 @@ plt.arrow(0.8, 12.5, 0.4, 0, width=.2, head_width=.6, color='grey')
 ax.annotate("wind direction", (2.1, 12.2), fontsize=18)
 
 ax.annotate("turbine", (9.7,7.2), fontsize=18)
+
+ax.annotate("D1 (30 m res.)", (15, .3), fontsize=14, color='green')
+ax.annotate("D2 (10 m res.)", (8, 5.3), fontsize=14, color='blue')
 
 ax.set_xticks(np.arange(0, 22, 3))
 ax.set_yticks(np.arange(0, 16, 3))

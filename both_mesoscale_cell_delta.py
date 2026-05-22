@@ -16,6 +16,10 @@ u_inftys = [9.567571, 9.740854]
 
 fig2, ax2 = plt.subplots(ncols=1, figsize=(6, 5))
 
+
+# store trendline equations
+trend_equations = []
+
 i = 1
 ds = datasets[i]
 u_infty = u_inftys[i]
@@ -23,6 +27,21 @@ inv_deltax = ds['inv_deltax']
 pred_delta_u = ds['predicted'] / u_infty
 
 ax2.plot(inv_deltax, pred_delta_u, color='turquoise', linestyle='dashdot', linewidth=2.5, label=f'predicted in AIF')
+
+# -----------------------------
+# LINEAR TREND LINE
+# -----------------------------
+coeffs = np.polyfit(inv_deltax, pred_delta_u, 1)
+slope, intercept = coeffs
+
+trend = np.poly1d(coeffs)
+
+# smooth x values for plotting
+x_fit = np.linspace(inv_deltax.min(), inv_deltax.max(), 200)
+
+trend_equations.append(
+    f"{'predicted'}: y = {slope:.4f}x + {intercept:.4f}"
+)
 
 ax2.set_xlabel(r'$1/\Delta x$ (1/m)')
 ax2.set_ylabel('Average normalized upstream wind speed deficit')
@@ -48,8 +67,33 @@ for i in range(2):
                 yerr=se,
                 color=colors[i], marker=markers[i], linestyle='None', capsize=4,
                 label=f'LES deficit: {labels[i]}')
+
+    # -----------------------------
+    # LINEAR TREND LINE
+    # -----------------------------
+    coeffs = np.polyfit(inv_deltax, mean_speeds, 1)
+    slope, intercept = coeffs
+
+    trend = np.poly1d(coeffs)
+
+    # smooth x values for plotting
+    x_fit = np.linspace(inv_deltax.min(), inv_deltax.max(), 200)
+
+    trend_equations.append(
+        f"{labels[i]}: y = {slope:.4f}x + {intercept:.4f}"
+    )
+
     if i == 1:
         ax.plot(inv_deltax, pred_delta_u, color='turquoise', linestyle='dashdot', linewidth=2.5, label=f'predicted in AIF')
+
+# print equations
+print("\nTrend line equations:")
+for eq in trend_equations:
+    print(eq)
+
+print(-5.6697 / -32.8669)
+print(-6.5410 / -32.8669)
+
 ax.set_xlabel(r'$1/\Delta x$ (1/m)')
 ax.set_ylabel('Average normalized upstream wind speed deficit')
 

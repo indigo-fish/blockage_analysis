@@ -8,7 +8,7 @@ neutral = pd.read_csv('grid_cell_wind_speed_delta_neutral.csv', index_col=0, hea
 stable = pd.read_csv('grid_cell_wind_speed_delta_stable.csv', index_col=0, header=0)
 datasets = [neutral, stable]
 labels = ['neutral', 'stable']
-colors = ['blue', 'green']
+colors = ["#9B4F96", "#0038A8"]
 markers = ['o', 'v']
 linestyles = ['dashed', 'dotted']
 

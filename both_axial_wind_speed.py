@@ -8,8 +8,8 @@ panel_labels = ['a', 'b']
 neutral = pd.read_csv('axial_wind_speed_neutral.csv', index_col=0, header=0)
 stable = pd.read_csv('axial_wind_speed_stable.csv', index_col=0, header=0)
 datasets = [neutral, stable]
-labels = ['Neutral', 'Stable']
-colors = ['blue', 'green']
+labels = ['neutral', 'stable']
+colors = ["#9B4F96", "#0038A8"]
 linestyles = ['solid', 'dashed']
 
 # --- Secondary axis ---

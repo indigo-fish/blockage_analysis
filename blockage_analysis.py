@@ -310,7 +310,7 @@ def plot_cell_wind_speed_delta(
     max_w = int(outer_widths.max())
     y_min = int(turbine_y - max_w // 2)
     y_max = int(turbine_y + max_w // 2)
-    x_min = int(turbine_x - max_w)
+    x_min = int(turbine_x - max_w // 2)
     x_max = turbine_x
 
     delta_sub = delta.isel(
@@ -342,7 +342,7 @@ def plot_cell_wind_speed_delta(
 
         # restrict y
         # divide by width manually because we're summing rather than taking mean
-        box = x_sum.isel(south_north=slice(y0, y1)) / width
+        box = x_sum.isel(south_north=slice(y0, y1)) / (width / 2)
 
         stats = xr.Dataset({
             "mean": box.mean(dim=("Time", "south_north"), skipna=True),

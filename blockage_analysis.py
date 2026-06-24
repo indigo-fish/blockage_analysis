@@ -310,7 +310,7 @@ def plot_cell_wind_speed_delta(
     max_w = int(outer_widths.max())
     y_min = int(turbine_y - max_w // 2)
     y_max = int(turbine_y + max_w // 2)
-    x_min = int(turbine_x - max_w // 2)
+    x_min = int(turbine_x - max_w)
     x_max = turbine_x
 
     delta_sub = delta.isel(
@@ -333,7 +333,7 @@ def plot_cell_wind_speed_delta(
         y0 = (y_max - y_min) // 2 - w // 2
         y1 = y0 + w
 
-        x0 = max_w - w
+        x0 = max_w - w // 2
         x1 = max_w
 
         # compute box sum using cumsum

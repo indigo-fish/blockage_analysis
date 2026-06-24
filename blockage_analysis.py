@@ -322,6 +322,7 @@ def plot_cell_wind_speed_delta(
     # --- CUMULATIVE SUM trick ---
     # cumulative sum along west_east (streamwise)
     cumsum_x = delta_sub.cumsum(dim="west_east")
+    cumsum_x2 = (delta_sub ** 2).cumsum(dim="west_east")
 
     results = []
     std_results = []
@@ -339,17 +340,17 @@ def plot_cell_wind_speed_delta(
         # compute box sum using cumsum
         # sum over x via difference
         x_sum = cumsum_x.isel(west_east=x1 - 1) - cumsum_x.isel(west_east=x0 - 1)
+        x_sum2 = cumsum_x2.isel(west_east=x1 - 1) - cumsum_x2.isel(west_east=x0 - 1)
 
-        # restrict y
-        # divide by width manually because we're summing rather than taking mean
-        box = x_sum.isel(south_north=slice(y0, y1)) / (width / 2)
+        box_sum = x_sum.isel(south_north=slice(y0, y1))
+        box_sum2 = x_sum2.isel(south_north=slice(y0, y1))
 
-        stats = xr.Dataset({
-            "mean": box.mean(dim=("Time", "south_north"), skipna=True),
-            "std": box.std(dim=("Time", "south_north"), skipna=True)
-        })
-        mean_val = stats["mean"]
-        std_val = stats["std"]
+        N = (width / 2) * width * delta.sizes["Time"]
+
+        mean_val = box_sum.sum(dim=("Time", "south_north")) / N
+        mean_sq = box_sum2.sum(dim=("Time", "south_north")) / N
+
+        std_val = np.sqrt(mean_sq - mean_val ** 2)
 
         results.append(mean_val)
         std_results.append(std_val)

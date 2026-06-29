@@ -259,26 +259,6 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     df.to_csv(figure_dir / 'axial_wind_speed.csv', index=True)
 
 
-def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, hub_index, turbine_x, turbine_y):
-    widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
-    mean_speeds = []
-    V2 = data_dict["V2"]
-    for width in widths:
-        grid_cell = V2.isel(bottom_top=hub_index,
-                            south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
-                            west_east=slice(turbine_x - int(width), turbine_x))
-        mean_wind_speed = grid_cell.mean(dim=("Time", "south_north", "west_east")).compute()
-        mean_speeds.append(mean_wind_speed)
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(widths, mean_speeds, marker='o')
-    ax.set_xlabel(r'$\Delta x$')
-    ax.set_ylabel('Mean wind speed (m/s)')
-    # ax.set_title(r'$\Delta x$ vs mean wind speed')
-    plt.tight_layout()
-    output_path = figure_dir / 'grid_cell_wind_speed_blockage.png'
-    plt.savefig(output_path, dpi=200)
-    logging.info(f"Saved plot: {output_path}")
-
 def get_colors(n, cmap_name='viridis'):
     cmap = plt.get_cmap(cmap_name)
     return [cmap(i) for i in np.linspace(0, 1, n)]
@@ -310,94 +290,17 @@ def plot_cell_wind_speed_delta(
     max_w = int(outer_widths.max())
     y_min = int(turbine_y - max_w // 2)
     y_max = int(turbine_y + max_w // 2)
-    x_min = int(turbine_x - max_w)
+    x_min = 0
     x_max = turbine_x
 
     delta_sub = delta.isel(
         bottom_top=hub_index,
         south_north=slice(y_min, y_max),
         west_east=slice(x_min, x_max)
-    )
+    ).mean(dim="Time", skipna=True)
+    df = pd.DataFrame(data=np.array(delta_sub))
 
-    # --- CUMULATIVE SUM trick ---
-    # cumulative sum along west_east (streamwise)
-    cumsum_x = delta_sub.cumsum(dim="west_east")
-
-    results = []
-    std_results = []
-
-    for width in widths:
-        w = int(width)
-
-        # define slices relative to subdomain
-        y0 = (y_max - y_min) // 2 - w // 2
-        y1 = y0 + w
-
-        x0 = max_w - w
-        x1 = max_w
-
-        # compute box sum using cumsum
-        # sum over x via difference
-        x_sum = cumsum_x.isel(west_east=x1 - 1) - cumsum_x.isel(west_east=x0 - 1)
-
-        # restrict y
-        # divide by width manually because we're summing rather than taking mean
-        box = x_sum.isel(south_north=slice(y0, y1)) / width
-
-        stats = xr.Dataset({
-            "mean": box.mean(dim=("Time", "south_north"), skipna=True),
-            "std": box.std(dim=("Time", "south_north"), skipna=True)
-        })
-        mean_val = stats["mean"]
-        std_val = stats["std"]
-
-        results.append(mean_val)
-        std_results.append(std_val)
-
-    # stack widths → new dimension
-    result_da = xr.concat(results, dim="width")
-    result_da = result_da.assign_coords(width=("width", widths))
-
-    std_result_da = xr.concat(std_results, dim="width")
-    std_result_da = std_result_da.assign_coords(width=("width", widths))
-
-    # compute ONCE
-    result_da = result_da.compute()
-    std_result_da = std_result_da.compute()
-
-    # --- Plot ---
-
-    mean_speeds = result_da
-
-    # units of wind speed
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(inv_deltax, mean_speeds,
-            color='blue', marker='o',
-            label=f'deficit in hub height ({hub_height} m) in LES')
-    ax.plot(inv_deltax, pred_delta_u, color='green', linestyle='dashed', linewidth=2.5, label=f'implied deficit in AIF')
-    ax.legend()
-    ax.set_xlabel(r'$1/\Delta x$ (1/m)')
-    ax.set_ylabel('Average upstream wind speed deficit (m/s)')
-    plt.tight_layout()
-    output_path = figure_dir / 'grid_cell_wind_speed_delta.png'
-    plt.savefig(output_path, dpi=200)
-    logging.info(f"Saved plot: {output_path}")
-
-    # unitless
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(inv_deltax, mean_speeds / u_infty,
-            color='blue', marker='o',
-            label=f'hub height ({hub_height} m) in LES')
-    ax.plot(inv_deltax, pred_delta_u / u_infty, color='grey', linestyle='dashed', label=f'approximation in AIF')
-    ax.legend()
-    ax.set_xlabel(r'$1/\Delta x$ (1/m)')
-    ax.set_ylabel('Normalized upstream wind speed deficit')
-    plt.tight_layout()
-    output_path = figure_dir / 'grid_cell_normalized_delta.png'
-    plt.savefig(output_path, dpi=200)
-    logging.info(f"Saved plot: {output_path}")
-
-    df = pd.DataFrame(data={"predicted": pred_delta_u, "actual": mean_speeds, "widths": widths, "inv_deltax": inv_deltax, "std": std_result_da})
+    logging.info(f"Saved data: grid_cell_wind_speed_delta.csv")
     df.to_csv(figure_dir / 'grid_cell_wind_speed_delta.csv', index=True)
 
 def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):
@@ -419,8 +322,6 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
                           ROTOR_DIAMETER)
     min_cell = 5 * ROTOR_DIAMETER
     max_cell = 2500
-    # plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, hub_index,
-    #                               TURBINE_X, TURBINE_Y)
     plot_cell_wind_speed_delta(turbine_dict, no_turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, HUB_HEIGHT, hub_index,
                                TURBINE_X, TURBINE_Y, ROTOR_DIAMETER)
     return turbine_dict

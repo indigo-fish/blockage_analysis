@@ -295,7 +295,7 @@ def plot_cell_wind_speed_delta(
     V2_no_turbine = no_turbine_dict["V2"]
 
     u_infty = V2_no_turbine.isel(bottom_top=hub_index).mean(dim=("Time", "south_north", "west_east")).values
-    f = open("u_infty.txt", "x")
+    f = open(figure_dir / "u_infty.txt", "x")
     f.write(str(u_infty))
     f.close()
     # u = V2.isel(bottom_top=hub_index, south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)), west_east=turbine_x).mean(dim=("Time", "south_north")).values

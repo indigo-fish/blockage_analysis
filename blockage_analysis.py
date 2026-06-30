@@ -286,7 +286,8 @@ def get_colors(n, cmap_name='viridis'):
 def plot_cell_wind_speed_delta(
     data_dict, no_turbine_dict, figure_dir,
     dx, min_cell_size, max_cell_size,
-    hub_height, hub_index, turbine_x, turbine_y, rotor_diameter
+    hub_height, hub_index, turbine_x, turbine_y, rotor_diameter,
+    ct_file_name
 ):
     outer_widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
     widths = outer_widths[:-1]
@@ -299,7 +300,8 @@ def plot_cell_wind_speed_delta(
     # u = V2.isel(bottom_top=hub_index, south_north=slice(turbine_y - int(rotor_diameter / dx / 2), turbine_y + int(rotor_diameter / dx / 2)), west_east=turbine_x).mean(dim=("Time", "south_north")).values
     # a = 1 - u / u_infty
     # C_T = 4 * a * (1 - a)
-    C_T = 0.5657
+    ct_data = pd.read_csv(f'turbine_thrust_curves/{ct_file_name}', header=None, index_col=None)
+    C_T = np.interp([u_infty], ct_data[0], ct_data[1])[0]
     A = (rotor_diameter / 2) ** 2 * np.pi
 
     pred_delta_u = - .5 * np.sqrt(1 - C_T) * A * u_infty / rotor_diameter * inv_deltax
@@ -400,7 +402,7 @@ def plot_cell_wind_speed_delta(
     df = pd.DataFrame(data={"predicted": pred_delta_u, "actual": mean_speeds, "widths": widths, "inv_deltax": inv_deltax, "std": std_result_da})
     df.to_csv(figure_dir / 'grid_cell_wind_speed_delta.csv', index=True)
 
-def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X):
+def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAMETER, DX, NY, NX, TURBINE_Y, TURBINE_X, CT_FILE_NAME):
     turbine_dict = load_data(TURBINE_DIR, FILES)
     no_turbine_dict = load_data(NO_TURBINE_DIR, FILES)
 
@@ -422,7 +424,7 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
     # plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, hub_index,
     #                               TURBINE_X, TURBINE_Y)
     plot_cell_wind_speed_delta(turbine_dict, no_turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, HUB_HEIGHT, hub_index,
-                               TURBINE_X, TURBINE_Y, ROTOR_DIAMETER)
+                               TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, CT_FILE_NAME)
     return turbine_dict
 
 if __name__ == "__main__":
@@ -444,6 +446,8 @@ if __name__ == "__main__":
     parser.add_argument("--turbine_dir", type=str, default="neutral")
     parser.add_argument("--noturbine_dir", type=str, default="neutral_no-turbine")
     parser.add_argument("--figure_dir", type=str, default="Figures/neutral")
+
+    parser.add_argument("--ct_file", type=str, default="nrel2p8_ct.csv")
 
     parser.add_argument(
         "--file_list",
@@ -472,6 +476,7 @@ if __name__ == "__main__":
         args.nx,
         args.turbine_y,
         args.turbine_x,
+        args.ct_file_name
     )
 
     client.close()

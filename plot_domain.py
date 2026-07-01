@@ -7,30 +7,60 @@ fig, ax = plt.subplots()
 
 rcParams['font.size'] = 18
 
-plt.scatter([.233 * 30 + 2.5], [.166 * 30 + 2.5], color='blue', s=15, label='turbine location')
-
 ax.tick_params(axis='both', which='major', labelsize=18)
 
 rect = mpatches.Rectangle((.233 * 30, .166 * 30), 7, 5, ec='blue', fill=False, linewidth=2)
 ax.add_patch(rect)
 
-plt.arrow(0.8, 12.5, 0.4, 0, width=.2, head_width=.6, color='grey')
+mesoscale_2 = mpatches.Rectangle((.233 * 30 + .5, .166 * 30 + 1.5), 2, 2, linestyle='dashed', linewidth=3, fill=True, facecolor='lightskyblue', ec='black')
+mesoscale_2.set_facecolor((0.53, 0.81, 0.92, 0.4))
+ax.add_patch(mesoscale_2)
+mesoscale_1 = mpatches.Rectangle((.233 * 30 + 1.5, .166 * 30 + 2), 1, 1, linestyle='dotted', linewidth=3, fill=True, facecolor='rebeccapurple', ec='black')
+mesoscale_1.set_facecolor((0.4, 0.2, 0.6, 0.4))
+ax.add_patch(mesoscale_1)
 
-ax.annotate("wind direction", (2.1, 12.2), fontsize=18)
+plt.scatter([.233 * 30 + 2.5], [.166 * 30 + 2.5], color='blue', s=30, label='turbine location')
 
-ax.annotate("turbine", (9.7,7.2), fontsize=18)
 
-ax.annotate("D1 (30 m res.)", (15, .3), fontsize=14, color='green')
-ax.annotate("D2 (10 m res.)", (8, 5.3), fontsize=14, color='blue')
-
-ax.set_xticks(np.arange(0, 22, 3))
-ax.set_yticks(np.arange(0, 16, 3))
+ax.set_xticks(np.arange(7, 15, 1))
+ax.set_yticks(np.arange(5, 11, 1))
 
 ax.set_xlabel('X (km)', fontsize=20)
 ax.set_ylabel('Y (km)', fontsize=20)
 
 fig.tight_layout()
 
-plt.savefig('domain.png', bbox_inches='tight', dpi=300)
+plt.savefig('domain_full-cell.png', bbox_inches='tight', dpi=300)
 
-plt.show()
+fig, ax = plt.subplots()
+
+rcParams['font.size'] = 18
+
+plt.scatter([.233 * 30 + 2.5], [.166 * 30 + 2.5], color='blue', s=30, label='turbine location')
+
+ax.tick_params(axis='both', which='major', labelsize=18)
+
+rect = mpatches.Rectangle((.233 * 30, .166 * 30), 7, 5, ec='blue', fill=False, linewidth=2)
+ax.add_patch(rect)
+
+mesoscale_1 = mpatches.Rectangle((.233 * 30 + 1.5, .166 * 30 + 2), 1, 1, linestyle='dotted', linewidth=3, fill=False, ec='gray')
+ax.add_patch(mesoscale_1)
+mesoscale_2 = mpatches.Rectangle((.233 * 30 + .5, .166 * 30 + 1.5), 2, 2, linestyle='dashed', linewidth=3, fill=False, ec='gray')
+ax.add_patch(mesoscale_2)
+
+mesoscale_4 = mpatches.Rectangle((.233 * 30 + 1.5, .166 * 30 + 1.5), 1, 2, linestyle='dashed', linewidth=3, fill=True, facecolor='lightskyblue', ec='black')
+mesoscale_4.set_facecolor((0.53, 0.81, 0.92, 0.4))
+ax.add_patch(mesoscale_4)
+mesoscale_3 = mpatches.Rectangle((.233 * 30 + 2, .166 * 30 + 2), .5, 1, linestyle='dotted', linewidth=3, fill=True, facecolor='rebeccapurple', ec='black')
+mesoscale_3.set_facecolor((0.4, 0.2, 0.6, 0.4))
+ax.add_patch(mesoscale_3)
+
+ax.set_xticks(np.arange(7, 15, 1))
+ax.set_yticks(np.arange(5, 11, 1))
+
+ax.set_xlabel('X (km)', fontsize=20)
+ax.set_ylabel('Y (km)', fontsize=20)
+
+fig.tight_layout()
+
+plt.savefig('domain_half-cell.png', bbox_inches='tight', dpi=300)

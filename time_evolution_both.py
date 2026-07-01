@@ -12,7 +12,7 @@ stable = pd.read_csv('time_evolution_stable.csv', index_col=0, header=0).T
 datasets = [neutral, stable]
 labels = ['N_NWT', 'S_NWT']
 
-fig, axes = plt.subplots(ncols=2, sharey=True, figsize=(10, 6), width_ratios=[12, 18])
+fig, axes = plt.subplots(nrows=2, sharex=True, figsize=(10, 10))
 for i in range(2):
     ax = axes[i]
     ds = datasets[i]
@@ -32,19 +32,10 @@ for i in range(2):
 
     ax.set_title(labels[i])
 
-    ax.text(
-        0.02, 0.98, f'({panel_labels[i]})',
-        transform=ax.transAxes,
-        fontsize=18,
-        fontweight='bold',
-        va='top',
-        ha='left'
-    )
-
-plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
-ax.legend(loc=(.02, 0.7))
+axes[0].legend(loc=(.02, 0.7))
 plt.ylim(bottom=0)
 axes[0].set_ylabel('height (m)')
+axes[1].set_ylabel('height (m)')
 
 plt.tight_layout()
 output_path = 'time_evolution.png'

@@ -15,7 +15,7 @@ XMIN_LS = [286, 0, 255]
 XMAX_LS = [294, 12, 285]
 NUM_X_TICKS_LS = [5, 4, 5]
 
-LOCATION = f'vertical_profile_300_all_stabilities.png'
+LOCATION = f'vertical_profile_1000_all_stabilities.png'
 
 SCALING = 1
 SHAPE = (5.3, 5.5)
@@ -38,8 +38,8 @@ for i, VARIABLE in enumerate(VARIABLES):
     ax = axes[i]
 
 
-    stable = np.array(pd.read_csv(f'{VARIABLE}_vertical_profile_300_stable_000.csv', index_col=None, header=None))
-    neutral = np.array(pd.read_csv(f'{VARIABLE}_vertical_profile_300_neutral_000.csv', index_col=None, header=None))
+    stable = np.array(pd.read_csv(f'{VARIABLE}_vertical_profile_2000_stable_000.csv', index_col=None, header=None))
+    neutral = np.array(pd.read_csv(f'{VARIABLE}_vertical_profile_2000_neutral_000.csv', index_col=None, header=None))
     all_data = {"stable": stable,
                 "neutral": neutral,
                 # "unstable": unstable
@@ -61,22 +61,14 @@ for i, VARIABLE in enumerate(VARIABLES):
     ax.set_xlabel(UNITS, fontsize=28)
 
     ax.set_xlim(XMIN, XMAX)
-    ax.set_ylim(0, 300)
+    ax.set_ylim(0, 1000)
 
-    yticks = np.linspace(0, 300, 4)
+    yticks = np.linspace(0, 1000, 5)
     xticks = np.linspace(XMIN, XMAX, num_x_ticks)
     ax.set_yticks(yticks, labels=yticks.astype(int), fontsize=24)
     ax.set_xticks(xticks, labels=xticks.astype(int), fontsize=24)
 
     ax.axhspan(90 - 127/2, 90 + 127/2, facecolor='grey', alpha=0.5, label='turbine rotor area')
-    ax.text(
-        0.02, 0.98, f'({panel_labels[i]})',
-        transform=ax.transAxes,
-        fontsize=28,
-        fontweight='bold',
-        va='top',
-        ha='left'
-    )
 
     if VARIABLE=='windspeed':
         ax.legend(fontsize=16, loc='center left')

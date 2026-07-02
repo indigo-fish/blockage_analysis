@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 
 plt.rcParams['font.size'] = 12
 
-neutral = pd.read_csv('grid_cell_wind_speed_delta_neutral.csv', index_col=0, header=0)
-stable = pd.read_csv('grid_cell_wind_speed_delta_stable.csv', index_col=0, header=0)
+neutral = pd.read_csv('grid_cell_wind_speed_delta_neutral_std.csv', index_col=0, header=0)
+stable = pd.read_csv('grid_cell_wind_speed_delta_stable_std.csv', index_col=0, header=0)
 datasets = [neutral, stable]
 labels = ['neutral', 'stable']
 colors = ["#9B4F96", "#0038A8"]
+colors_trend = ["#E5A8E0", "#5DA9FF"]
 markers = ['o', 'v']
 linestyles = ['dashed', 'dotted']
 
@@ -40,7 +41,7 @@ trend = np.poly1d(coeffs)
 x_fit = np.linspace(inv_deltax.min(), inv_deltax.max(), 200)
 
 trend_equations.append(
-    f"{'predicted'}: y = {slope:.4f}x + {intercept:.4f}"
+    f"{'predicted'}: y = {slope:.4f}x"
 )
 
 ax2.set_xlabel(r'$1/\Delta x$ (1/m)')
@@ -66,7 +67,7 @@ for i in range(2):
     ax.errorbar(inv_deltax, mean_speeds,
                 yerr=se,
                 color=colors[i], marker=markers[i], linestyle='None', capsize=4,
-                label=f'LES deficit: {labels[i]}')
+                label=f'LES deficit: {labels[i]}', zorder=3)
 
     # -----------------------------
     # LINEAR TREND LINE
@@ -82,9 +83,15 @@ for i in range(2):
     trend_equations.append(
         f"{labels[i]}: y = {slope:.4f}x + {intercept:.4f}"
     )
+    ax.plot(x_fit, trend(x_fit), color=colors_trend[i], linestyle='solid', linewidth=2.5, zorder=5)
+
+    # annotate graph with the best fit lines in the appropriate colors
+    ax.text(0.00088 + .000015 * i, -0.02 - i * 0.003, trend_equations[-1], color=colors[i])
 
     if i == 1:
         ax.plot(inv_deltax, pred_delta_u, color='turquoise', linestyle='dashdot', linewidth=2.5, label=f'predicted in AIF')
+        # annotate graph with predicted line in the appropriate colors
+        ax.text(0.00095, -0.02 - 2 * .003, trend_equations[0], color='lightseagreen')
 
 # print equations
 print("\nTrend line equations:")

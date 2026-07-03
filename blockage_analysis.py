@@ -259,26 +259,6 @@ def plot_axial_wind_speed(turbine_dict, no_turbine_dict, figure_dir, ny, nx, dx,
     df.to_csv(figure_dir / 'axial_wind_speed.csv', index=True)
 
 
-def plot_cell_wind_speed_blockage(data_dict, figure_dir, dx, min_cell_size, max_cell_size, hub_index, turbine_x, turbine_y):
-    widths = np.arange(int(min_cell_size / dx), int(max_cell_size / dx), 2)
-    mean_speeds = []
-    V2 = data_dict["V2"]
-    for width in widths:
-        grid_cell = V2.isel(bottom_top=hub_index,
-                            south_north=slice(int(turbine_y - width / 2), int(turbine_y + width / 2)),
-                            west_east=slice(turbine_x - int(width), turbine_x))
-        mean_wind_speed = grid_cell.mean(dim=("Time", "south_north", "west_east")).compute()
-        mean_speeds.append(mean_wind_speed)
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(widths, mean_speeds, marker='o')
-    ax.set_xlabel(r'$\Delta x$')
-    ax.set_ylabel('Mean wind speed (m/s)')
-    # ax.set_title(r'$\Delta x$ vs mean wind speed')
-    plt.tight_layout()
-    output_path = figure_dir / 'grid_cell_wind_speed_blockage.png'
-    plt.savefig(output_path, dpi=200)
-    logging.info(f"Saved plot: {output_path}")
-
 def get_colors(n, cmap_name='viridis'):
     cmap = plt.get_cmap(cmap_name)
     return [cmap(i) for i in np.linspace(0, 1, n)]
@@ -421,8 +401,6 @@ def main(TURBINE_DIR, NO_TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, ROTOR_DIAME
                           ROTOR_DIAMETER)
     min_cell = 5 * ROTOR_DIAMETER
     max_cell = 2500
-    # plot_cell_wind_speed_blockage(turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, hub_index,
-    #                               TURBINE_X, TURBINE_Y)
     plot_cell_wind_speed_delta(turbine_dict, no_turbine_dict, FIGURE_DIR, DX, min_cell, max_cell, HUB_HEIGHT, hub_index,
                                TURBINE_X, TURBINE_Y, ROTOR_DIAMETER, CT_FILE_NAME)
     return turbine_dict

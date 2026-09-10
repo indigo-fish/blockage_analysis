@@ -52,32 +52,40 @@ def load_data(data_dir, file):
     return data_dict
 
 
-def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diameter, dx, file_name=None):
+def plot_horizontal_slice(data_dict, figure_dir, turbine_x, turbine_y, hub_height, dx, file_name=None):
     V2 = data_dict["V2"]
-    print(V2.shape)
-    vertical_slice = V2[:, :, turbine_y]
-    mean_vertical_slice = vertical_slice
-
-    output_stem = f'mean_vertical_slice_{file_name}'
-
-    # --- Coordinate arrays ---
-    nx = mean_vertical_slice.shape[1]
-    x = np.arange(nx) * dx
 
     Z_full = data_dict["Z"]
     z = Z_full[:, turbine_x, turbine_y]
 
+    # Select the horizontal slice at the hub height
+    z_idx = np.argmin(np.abs(z - hub_height))
+
+    horizontal_slice = V2[z_idx, :, :]
+    mean_horizontal_slice = horizontal_slice
+    output_stem = f'mean_horizontal_slice_{file_name}'
+
+    # --- Coordinate arrays ---
+    nx = mean_horizontal_slice.shape[0]
+    x = np.arange(nx) * dx
+    ny = mean_horizontal_slice.shape[1]
+    y = np.arange(ny) * dx
+
     fig, ax = plt.subplots(figsize=(10, 6))
     levels = np.linspace(3, 12, 21)
 
-    cf = ax.contourf(x[250-30:250+30], z[:60], mean_vertical_slice[:60, 250-30:250+30], levels=levels, cmap='viridis')
+    print(f'x: {x.shape}')
+    print(f'y: {y.shape}')
+    print(f'shape: {mean_horizontal_slice.shape}')
+
+    cf = ax.contourf(x, y, mean_horizontal_slice.T, levels=levels, cmap='viridis')
     plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
-    ax.set_title(f'Mean Vertical Slice of Wind Speed through Turbine Rotor Width')
+    ax.set_title(f'Horizontal Slice of Wind Speed at Hub Height')
     ax.set_xlabel('X (m)')
-    ax.set_ylabel('Z (m)')
+    ax.set_ylabel('Y (m)')
     plt.axis('equal')
     plt.xlim(2300, 2700)
-    plt.ylim(5, 300)
+    plt.ylim(2000, 3000)
     plt.tight_layout()
     plt.savefig(figure_dir / f'{output_stem}.png', dpi=200)
     print(f"Saved figure {output_stem}.png")
@@ -90,28 +98,20 @@ def main(DATA_DIR, FILE, FIGURE_DIR):
 
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
 
-    plot_vertical_slice(
+    plot_horizontal_slice(
         turbine_dict,
         FIGURE_DIR,
         250,
         250,
-        127,
+        90,
         10,
         file_name=FILE,
     )
 
 
 DATA_DIR = Path("NWP_CLASS_FINAL_SIMULATIONS") / "2026-04-22_stable_nba_increase_turbulence_turbine"
-FIGURE_DIR = Path('31-08_figures')
+FIGURE_DIR = Path('09-08_figures')
 FILES = [f for f in sorted(os.listdir(DATA_DIR)) if 'wrfout_d02_2000-01-01_17_' in f]
 FILES = [f for f in FILES if f[-3:] == "_00"]
-"""
-for FILE in ['wrfout_d02_2000-01-01_17_00_00', 'wrfout_d02_2000-01-01_17_05_00',
-             'wrfout_d02_2000-01-01_17_10_00', 'wrfout_d02_2000-01-01_17_15_00',
-             'wrfout_d02_2000-01-01_17_20_00', 'wrfout_d02_2000-01-01_17_25_00',
-             'wrfout_d02_2000-01-01_17_30_00', 'wrfout_d02_2000-01-01_17_35_00',
-             'wrfout_d02_2000-01-01_17_40_00', 'wrfout_d02_2000-01-01_17_45_00',
-             'wrfout_d02_2000-01-01_17_50_00', 'wrfout_d02_2000-01-01_17_55_00']:
-"""
 for FILE in FILES:
     main(DATA_DIR, FILE, FIGURE_DIR)

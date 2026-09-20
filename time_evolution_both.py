@@ -23,7 +23,8 @@ fig, axes = plt.subplots(nrows=3, sharex=True, figsize=(10, 10))
 for i in range(3):
     ax = axes[i]
     ds = datasets[i]
-    time = ds.columns.astype('datetime64[ns]').tolist()
+    offset_hours = [8, 6, 0][i]
+    time = (pd.to_datetime(ds.columns) + pd.to_timedelta(offset_hours, unit='h')).tolist()
     z = ds.index.astype(float).tolist()
 
     ax.contourf(time, z, ds, levels=levels, cmap=cmap, norm=norm)
@@ -39,7 +40,7 @@ for i in range(3):
 
     ax.set_title(labels[i])
 
-axes[0].legend(loc=(.7, 0.6))
+axes[0].legend(loc=(.01, 0.6))
 plt.ylim(bottom=0)
 axes[0].set_ylabel('height (m)')
 axes[1].set_ylabel('height (m)')

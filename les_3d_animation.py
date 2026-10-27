@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import os
 
-
 # In[2]:
 
 
@@ -87,13 +86,16 @@ def plot_vertical_slice(data_dict, figure_dir, turbine_x, turbine_y, rotor_diame
 
     fig, ax = plt.subplots(figsize=(10, 6))
     cf = ax.contourf(x, z[:60], mean_vertical_slice[:60, :], levels=20, cmap='viridis')
-    plt.colorbar(cf, ax=ax, label='Wind Speed (m/s)')
-    ax.set_title('Mean Vertical Slice of Wind Speed through Turbine Rotor Width')
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Z (m)')
+    cbar = plt.colorbar(cf, ax=ax)
+    cbar.set_label('Wind Speed (m/s)', fontsize=22)
+    cbar.ax.tick_params(labelsize=18)
+    ax.set_title('Mean Vertical Slice of Wind Speed through Turbine Rotor Width', fontsize=24)
+    ax.set_xlabel('X (m)', fontsize=22)
+    ax.set_ylabel('Z (m)', fontsize=22)
+    ax.tick_params(axis='both', labelsize=18)
     ax.vlines([turbine_x * dx], z[lower_z], z[upper_z],
               color='black', linestyle='dashed', label='turbine position')
-    ax.legend()
+    ax.legend(fontsize=18)
     plt.tight_layout()
     plt.savefig(figure_dir / 'mean_vertical_slice.png', dpi=200)
 
@@ -173,6 +175,7 @@ def plot_3d_wind_speed_difference_bubbles(
                 transform=ax.transAxes,
                 ha="center",
                 va="center",
+                fontsize=22,
             )
         else:
             plot_x = x3[mask]
@@ -207,16 +210,22 @@ def plot_3d_wind_speed_difference_bubbles(
                 shrink=0.7,
             )
             cbar.set_label(
-                "Wind Speed Difference from No-Turbine Case (m/s)"
+                "Wind Speed Difference from No-Turbine Case (m/s)",
+                fontsize=22,
             )
+            cbar.ax.tick_params(labelsize=18)
 
         ax.set_title(
             f"3-D Wind-Speed Anomalies\n"
-            f"{key} — |ΔV| ≥ {threshold:.1f} m/s"
+            f"{key} — |ΔV| ≥ {threshold:.1f} m/s",
+            fontsize=24,
         )
-        ax.set_xlabel("X (m)")
-        ax.set_ylabel("Y (m)")
-        ax.set_zlabel("Z (m)")
+        ax.set_xlabel("X (m)", fontsize=22, labelpad=12)
+        ax.set_ylabel("Y (m)", fontsize=22, labelpad=12)
+        ax.set_zlabel("Z (m)", fontsize=22, labelpad=12)
+        ax.xaxis.set_tick_params(labelsize=18)
+        ax.yaxis.set_tick_params(labelsize=18)
+        ax.zaxis.set_tick_params(labelsize=18)
 
         # Set user-specified axis limits
         if xlim is not None:
@@ -288,12 +297,18 @@ NOTURBINE_DIR = Path("NWP_CLASS_FINAL_SIMULATIONS") / "2026-04-22_stable_nba_inc
 FIGURE_DIR = Path('3D_Figures/neutral')
 ELEV = 25
 AZIM = -150
-for FILE in ['wrfout_d02_2000-01-01_17_00_00', 'wrfout_d02_2000-01-01_17_05_00',
-             'wrfout_d02_2000-01-01_17_10_00', 'wrfout_d02_2000-01-01_17_15_00',
-             'wrfout_d02_2000-01-01_17_20_00', 'wrfout_d02_2000-01-01_17_25_00',
-             'wrfout_d02_2000-01-01_17_30_00', 'wrfout_d02_2000-01-01_17_35_00',
-            'wrfout_d02_2000-01-01_17_40_00', 'wrfout_d02_2000-01-01_17_45_00',
-             'wrfout_d02_2000-01-01_17_50_00', 'wrfout_d02_2000-01-01_17_55_00']:
-    FILES = [FILE]
-    neutral_data = main(DATA_DIR, NOTURBINE_DIR, FILES, FIGURE_DIR, DOMAIN, ELEV, AZIM)
-
+FILES = sorted(
+    file.name
+    for file in DATA_DIR.glob("wrfout_d02_2000-01-01_17_*_00")
+    if file.is_file()
+)
+for file_name in FILES:
+    neutral_data = main(
+        DATA_DIR,
+        NOTURBINE_DIR,
+        [file_name],
+        FIGURE_DIR,
+        DOMAIN,
+        ELEV,
+        AZIM,
+    )

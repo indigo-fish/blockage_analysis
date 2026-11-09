@@ -114,7 +114,7 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, hub_height,
     # x: uniform spacing
     time = [filename[11:] for filename in FILES]
     time = [
-        datetime.strptime(t, "%Y-%m-%d_%H_%M_%S")
+        datetime.strptime(t.replace(":", "_"), "%Y-%m-%d_%H_%M_%S")
         for t in time
     ]
 
@@ -163,7 +163,7 @@ def evolution_one_height(data_dict, figure_dir, turbine_x, turbine_y, hub_height
         # --- Coordinate arrays ---
         time = [filename[11:] for filename in FILES]
         time = [
-            datetime.strptime(t, "%Y-%m-%d_%H_%M_%S")
+            datetime.strptime(t.replace(":", "_"), "%Y-%m-%d_%H_%M_%S")
             for t in time
         ]
     

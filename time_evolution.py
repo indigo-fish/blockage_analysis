@@ -72,6 +72,7 @@ def load_data(data_dir, files):
     W = ds["W"]
     PH = ds["PH"]
     PHB = ds["PHB"]
+    UST = ds["UST"]
 
     Z = (PH + PHB) / 9.81
 
@@ -87,7 +88,7 @@ def load_data(data_dir, files):
     # calculate wind direction in degrees (0° = North, 90° = East)
     wind_direction = (np.arctan2(U_destag, V_destag) * (180 / np.pi)) % 360
 
-    data_dict = {"Z": Z_destag, "U": U_destag, "V": V_destag, "V2": V2, "WD": wind_direction, "W": W_destag}
+    data_dict = {"Z": Z_destag, "U": U_destag, "V": V_destag, "V2": V2, "WD": wind_direction, "W": W_destag, "UST": UST}
 
     logging.info(f"Loaded data from {data_dir}")
 
@@ -149,7 +150,7 @@ def plot_time_evolution(data_dict, figure_dir, turbine_x, turbine_y, hub_height,
 
 
 def evolution_one_height(data_dict, figure_dir, turbine_x, turbine_y, hub_height, FILES):
-    variables = ["U", "V", "V2", "WD", "W"]
+    variables = ["U", "V", "V2", "WD", "W", "UST"]
     nearest_index = find_nearest_height(
         data_dict["Z"].isel(Time=0, west_east=turbine_x, south_north=turbine_y).compute(), hub_height)
     logging.info(f"Nearest height index for hub height {hub_height} m: {nearest_index}")
@@ -157,7 +158,10 @@ def evolution_one_height(data_dict, figure_dir, turbine_x, turbine_y, hub_height
     for variable in variables:
         V2 = data_dict[variable]
 
-        horizontal_slice = V2.isel(bottom_top=nearest_index[0])
+        if variable != "UST":
+            horizontal_slice = V2.isel(bottom_top=nearest_index[0])
+        else:
+            horizontal_slice = V2
         mean_horizontal_slice = horizontal_slice.mean(dim=("west_east", "south_north")).compute()
 
         # --- Coordinate arrays ---
@@ -183,6 +187,25 @@ def evolution_one_height(data_dict, figure_dir, turbine_x, turbine_y, hub_height
 
         df = pd.DataFrame(data=mean_horizontal_slice.values, index=time, columns=[f'{variable} at {hub_height} m'])
         df.to_csv(figure_dir / f'{variable}_evolution_one_height.csv', index=True)
+
+        # also do the standard deviation
+        std_horizontal_slice = horizontal_slice.std(dim=("west_east", "south_north")).compute()
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        cf = ax.plot(time, std_horizontal_slice, color='blue', linewidth=2)
+
+        plt.gcf().autofmt_xdate()  # rotates dates nicely
+        ax.set_xlabel('Time')
+        ax.set_ylabel(variable)
+        ax.set_title(f'{variable} Evolution at Hub Height ({hub_height} m)')
+        ax.grid(True)
+        plt.tight_layout()
+        output_path = figure_dir / f'{variable}_spatial_std_evolution_one_height.png'
+        plt.savefig(output_path, dpi=200)
+        logging.info(f"Saved plot: {output_path}")
+        
+        df_std = pd.DataFrame(data=std_horizontal_slice.values, index=time, columns=[f'{variable} std at {hub_height} m'])
+        df_std.to_csv(figure_dir / f'{variable}_spatial_std_evolution_one_height.csv', index=True)
 
 
 def main(TURBINE_DIR, FILES, FIGURE_DIR, HUB_HEIGHT, TURBINE_Y, TURBINE_X):
